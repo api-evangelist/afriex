@@ -1,0 +1,344 @@
+generated: '2026-09-12'
+method: searched
+status: published
+source: https://docs.afriex.com/mcp/introduction + live tools/list against https://mcp.afriex.com/mcp
+deployment:
+  mode: remote
+  endpoint: https://mcp.afriex.com/mcp
+  auth: api-key
+  verified: probed
+  auth_detail: 'Two documented paths, both API-key based, no OAuth: pass x-afriex-api-key (and optional
+    x-afriex-environment: production|development) as HTTP headers in the MCP client config, or call the
+    authenticate tool as the first action in the session. The server publishes no /.well-known/oauth-authorization-server
+    or oauth-protected-resource document; both 404.'
+  probe_note: 'initialize returned protocolVersion 2025-06-18 and serverInfo {name: afriex-api, version:
+    0.0.0} anonymously, and tools/list then returned all 26 tools with full inputSchema over an unauthenticated
+    session (mcp-session-id header). Discovery is open; invocation is key-gated.'
+server:
+  name: afriex-api
+  version: 0.0.0
+  transport: http
+  url: https://mcp.afriex.com/mcp
+  protocol_version: '2025-06-18'
+  capabilities:
+    tools:
+      listChanged: true
+  documentation: https://docs.afriex.com/mcp/introduction
+  client_setup: https://docs.afriex.com/mcp/connecting
+tool_count: 26
+tools:
+- name: authenticate
+  description: Set the API key and optionally the environment for this session. Required before using
+    other tools unless authenticated via x-afriex-api-key / x-afriex-environment HTTP headers or the AFRIEX_API_KEY
+    environment variable.
+  required:
+  - apiKey
+  parameters:
+  - apiKey
+  - environment
+  source_operation: null
+  note: MCP-session-only tool; no backing REST operation.
+- name: session_info
+  description: 'Get the current session configuration: masked API key, environment, and API base URL.
+    Useful for verifying which environment and credentials are active.'
+  required: []
+  parameters: []
+  source_operation: null
+  note: MCP-session-only tool; no backing REST operation.
+- name: create_customer
+  description: Create a new customer with name, email, phone, and country code. Optionally include KYC
+    and metadata.
+  required:
+  - fullName
+  - email
+  - phone
+  - countryCode
+  parameters:
+  - fullName
+  - email
+  - phone
+  - countryCode
+  - kyc
+  - meta
+  source_operation: openapi/afriex-business-openapi-original.json#createCustomer
+  http: POST /api/v1/customer
+- name: list_customers
+  description: Retrieve a paginated list of customers. Optionally filter by email (exact match, case-insensitive)
+    or phone (E.164 format).
+  required: []
+  parameters:
+  - page
+  - limit
+  - email
+  - phone
+  source_operation: openapi/afriex-business-openapi-original.json#listCustomers
+  http: GET /api/v1/customer
+- name: get_customer
+  description: Retrieve a specific customer by their unique identifier.
+  required:
+  - customerId
+  parameters:
+  - customerId
+  source_operation: openapi/afriex-business-openapi-original.json#getCustomer
+  http: GET /api/v1/customer/{customerId}
+- name: delete_customer
+  description: Delete a specific customer by their unique identifier.
+  required:
+  - customerId
+  parameters:
+  - customerId
+  source_operation: openapi/afriex-business-openapi-original.json#deleteCustomer
+  http: DELETE /api/v1/customer/{customerId}
+- name: update_customer_kyc
+  description: Update KYC information for a customer. KYC keys should be document types like PASSPORT,
+    DATE_OF_BIRTH, COUNTRY.
+  required:
+  - customerId
+  - kyc
+  parameters:
+  - customerId
+  - kyc
+  source_operation: openapi/afriex-business-openapi-original.json#updateCustomerKyc
+  http: PATCH /api/v1/customer/{customerId}/kyc
+- name: create_transaction
+  description: Create a new transaction. WITHDRAW sends funds to a destination payment method (requires
+    customerId and destinationId). DEPOSIT pulls funds from a source payment method (requires customerId
+    and sourceId). SWAP converts funds between currencies within the Afriex wallet — only sourceCurrency,
+    destinationCurrency, sourceAmount, and meta are required. Type defaults to WITHDRAW if not specified.
+  required:
+  - sourceCurrency
+  - destinationCurrency
+  parameters:
+  - customerId
+  - type
+  - sourceAmount
+  - destinationAmount
+  - sourceCurrency
+  - destinationCurrency
+  - destinationId
+  - sourceId
+  - meta
+  source_operation: openapi/afriex-business-openapi-original.json#createTransaction
+  http: POST /api/v1/transaction
+- name: list_transactions
+  description: Retrieve a paginated list of transactions. Supports filtering by transactionId, reference,
+    status, type, channel, currency, and date range.
+  required: []
+  parameters:
+  - page
+  - limit
+  - transactionId
+  - reference
+  - status
+  - type
+  - channel
+  - currency
+  - fromDate
+  - toDate
+  source_operation: openapi/afriex-business-openapi-original.json#listTransactions
+  http: GET /api/v1/transaction
+- name: get_transaction
+  description: Retrieve a specific transaction by its unique identifier. Returns transaction details including
+    status, amounts, and currencies.
+  required:
+  - transactionId
+  parameters:
+  - transactionId
+  source_operation: openapi/afriex-business-openapi-original.json#getTransaction
+  http: GET /api/v1/transaction/{transactionId}
+- name: create_payment_method
+  description: Create a new payment method for a customer. Supports BANK_ACCOUNT, SWIFT, MOBILE_MONEY,
+    UPI, INTERAC, and WE_CHAT channels. Institution requires at least institutionCode or institutionName.
+  required:
+  - channel
+  - customerId
+  - accountName
+  - accountNumber
+  - countryCode
+  - institution
+  parameters:
+  - channel
+  - customerId
+  - type
+  - accountName
+  - accountNumber
+  - countryCode
+  - institution
+  - recipient
+  - transaction
+  source_operation: openapi/afriex-business-openapi-original.json#createPaymentMethod
+  http: POST /api/v1/payment-method
+- name: list_payment_methods
+  description: Retrieve a paginated list of payment methods with pagination info.
+  required: []
+  parameters:
+  - page
+  - limit
+  source_operation: openapi/afriex-business-openapi-original.json#listPaymentMethods
+  http: GET /api/v1/payment-method
+- name: get_payment_method
+  description: Retrieve a specific payment method by its unique identifier.
+  required:
+  - paymentMethodId
+  parameters:
+  - paymentMethodId
+  source_operation: openapi/afriex-business-openapi-original.json#getPaymentMethod
+  http: GET /api/v1/payment-method/{paymentMethodId}
+- name: delete_payment_method
+  description: Delete a payment method by its unique identifier.
+  required:
+  - paymentMethodId
+  parameters:
+  - paymentMethodId
+  source_operation: openapi/afriex-business-openapi-original.json#deletePaymentMethod
+  http: DELETE /api/v1/payment-method/{paymentMethodId}
+- name: list_institutions
+  description: Get a list of banks or mobile money providers available for a specific country and channel.
+  required:
+  - channel
+  - countryCode
+  parameters:
+  - channel
+  - countryCode
+  source_operation: openapi/afriex-business-openapi-original.json#listInstitutions
+  http: GET /api/v1/payment-method/institution
+- name: resolve_institution_codes
+  description: Resolve a SWIFT code or US routing number to the corresponding bank name.
+  required:
+  - searchTerm
+  - country
+  - codeType
+  parameters:
+  - searchTerm
+  - country
+  - codeType
+  source_operation: openapi/afriex-business-openapi-original.json#resolveInstitutionCode
+  http: GET /api/v1/payment-method/institution/codes
+- name: resolve_payment_method
+  description: Resolve recipient info by account number or phone number for BANK_ACCOUNT or MOBILE_MONEY
+    channels. accountNumber is required for BANK_ACCOUNT, phone number for MOBILE_MONEY.
+  required:
+  - channel
+  - countryCode
+  parameters:
+  - channel
+  - accountNumber
+  - institutionCode
+  - countryCode
+  source_operation: openapi/afriex-business-openapi-original.json#resolveRecipient
+  http: GET /api/v1/payment-method/resolve
+- name: get_crypto_wallet
+  description: Get or create a crypto wallet for USDT or USDC. Production only. Returns wallet addresses
+    for the specified asset.
+  required:
+  - asset
+  parameters:
+  - asset
+  - customerId
+  source_operation: openapi/afriex-business-openapi-original.json#getCryptoWallet
+  http: GET /api/v1/payment-method/crypto-wallet
+- name: list_virtual_accounts
+  description: 'List existing virtual accounts for a currency. Read-only: returns an empty list when no
+    virtual accounts exist. Pass customerId to scope to a specific end-user; omit it to list the business
+    owner virtual accounts.'
+  required:
+  - currency
+  parameters:
+  - currency
+  - customerId
+  source_operation: openapi/afriex-business-openapi-original.json#listVirtualAccounts
+  http: GET /api/v1/payment-method/virtual-account
+- name: create_virtual_account
+  description: Create a virtual account for USD, NGN, GBP, or EUR. Pass amount for a dynamic (ephemeral)
+    virtual account, or label for a static one. amount and label are mutually exclusive.
+  required:
+  - currency
+  parameters:
+  - currency
+  - customerId
+  - amount
+  - label
+  source_operation: openapi/afriex-business-openapi-original.json#createVirtualAccount
+  http: POST /api/v1/payment-method/virtual-account
+- name: get_pool_account
+  description: Get the business pool account for a country. Use the `reference` on the response to reconcile
+    incoming deposits.
+  required:
+  - country
+  parameters:
+  - country
+  - customerId
+  source_operation: openapi/afriex-business-openapi-original.json#getPoolAccount
+  http: GET /api/v1/payment-method/pool-account
+- name: create_checkout_session
+  description: Create a hosted checkout session and return a checkoutUrl to redirect the customer to.
+    Amount is in minor currency units (e.g. kobo for NGN, cents for USD).
+  required:
+  - amount
+  - currency
+  - merchantReference
+  - redirectUrl
+  - customer
+  parameters:
+  - amount
+  - currency
+  - merchantReference
+  - redirectUrl
+  - customer
+  - channels
+  - metadata
+  source_operation: openapi/afriex-business-openapi-original.json#createCheckoutSession
+  http: POST /api/v1/checkout-session
+- name: get_balance
+  description: Fetch wallet balances for specified currencies. Returns a map of currency codes to balance
+    amounts.
+  required:
+  - currencies
+  parameters:
+  - currencies
+  source_operation: openapi/afriex-business-openapi-original.json#getBalance
+  http: GET /api/v1/org/balance
+- name: topup_balance
+  description: Top up sandbox balance. Credits the business wallet with the specified amount and currency.
+    Only available in sandbox/staging environment — returns 403 Forbidden in production.
+  required:
+  - amount
+  - currency
+  parameters:
+  - amount
+  - currency
+  source_operation: openapi/afriex-business-openapi-original.json#topupBalance
+  http: POST /api/v1/org/balance/topup
+- name: get_rates
+  description: Get real-time exchange rates. Optionally filter by base currencies (fromSymbols) and/or
+    target currencies (toSymbols). Returns a map of base currencies to their exchange rates against other
+    currencies.
+  required: []
+  parameters:
+  - fromSymbols
+  - toSymbols
+  source_operation: openapi/afriex-business-openapi-original.json#getRates
+  http: GET /api/v1/org/rates
+- name: trigger_webhook
+  description: 'Fire a real signed webhook to the configured callback URL using a real entity as the payload.
+    Sandbox-only: returns 403 in production. Useful for testing webhook handlers without manufacturing
+    the underlying activity.'
+  required:
+  - event
+  - entityId
+  parameters:
+  - event
+  - entityId
+  source_operation: openapi/afriex-business-openapi-original.json#triggerWebhook
+  http: POST /api/v1/webhooks/trigger
+coverage_note: '24 of the 26 tools bind one-to-one to a published REST operation; authenticate and session_info
+  are MCP-session-only. Eight REST operations have no MCP tool — see mcp/afriex-tool-crosswalk.yml. The
+  gap that matters operationally is authorizeTransaction: an agent can create a deposit through MCP that
+  lands in CUSTOMER_ACTION_REQUIRED, but cannot supply the OTP to finish it without dropping to REST.'
+x-evidence:
+  fetched: '2026-09-12'
+  endpoint: https://mcp.afriex.com/mcp
+  initialize_http_status: 200
+  tools_list_http_status: 200
+  tools_returned: 26
+  authenticated: false

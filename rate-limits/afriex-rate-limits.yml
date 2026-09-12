@@ -1,0 +1,36 @@
+generated: '2026-09-12'
+method: searched
+source: https://docs.afriex.com/development
+limit_count: 0
+note: 'Afriex documents that rate limiting exists but publishes no numbers. The OpenAPI
+  contract declares exactly one 429 response (on verifyCustomer, whose description states
+  "Verification is rate limited per business"), and the Integration Guide has a Rate
+  Limiting section that gives only behavioural advice — implement exponential backoff,
+  cache exchange rates, use webhooks instead of polling. No request-per-window figure, no
+  burst allowance, and no per-scope breakdown is stated anywhere in the docs, the contract
+  or the Agent Skill. This is recorded as an honest zero rather than omitted.'
+limits: []
+response_headers:
+  documented: []
+  note: 'No RateLimit-*, X-RateLimit-* or Retry-After response header is documented. This is
+    the more consequential gap than the missing numbers: an agent has no runtime signal for
+    how much budget it has left or how long to wait, and can only discover exhaustion by
+    receiving a 429 and guessing a backoff. Headers were not observed live because every
+    endpoint requires an API key, so an unauthenticated probe cannot reach a rate-limited
+    2xx response to read them from.'
+exhaustion:
+  status: 429
+  meaning: Too Many Requests - Rate limit exceeded
+  guidance: Retry with exponential backoff.
+  source: https://docs.afriex.com/development
+known_scoped_limits:
+- operation: verifyCustomer
+  scope: per-business
+  limit: null
+  window: null
+  evidence: 'OpenAPI description for POST /api/v1/customer/{customerId}/verify — "Verification
+    is rate limited per business." The only operation in the contract that names a rate
+    limit, and it states no figure.'
+recommendations_to_provider:
+- Publish the numeric limits per scope and window.
+- Emit RateLimit-Limit / RateLimit-Remaining / RateLimit-Reset (RFC 9331) or Retry-After on 429.

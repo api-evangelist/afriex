@@ -1,0 +1,133 @@
+generated: '2026-09-12'
+method: searched
+source: openapi/afriex-business-openapi-original.json (OpenAPI 3.1 webhooks block) + https://docs.afriex.com/api-reference/endpoint/webhooks/introduction
+spec_type: OpenAPI-3.1-webhooks
+asyncapi_published: false
+note: 'Afriex publishes no AsyncAPI document — /asyncapi.yaml and /asyncapi.json were not served on any
+  host and the docs index names no event spec. It does, however, describe its event surface machine-readably
+  inside the OpenAPI 3.1 contract itself, using the top-level webhooks block: five webhook channels, each
+  a real operation with a typed request body, plus a WebhookEventName enum of ten event names. That is
+  a genuine machine-readable event contract, so this artifact captures it verbatim from the spec rather
+  than deriving a fabricated AsyncAPI from prose. The Webhooks pointer is emitted; no AsyncAPI pointer
+  is, because no AsyncAPI document exists.'
+transport: https-webhook-push
+channels:
+- channel: customer.events
+  operation_id: customerWebhookEvent
+  summary: Customer Events
+  description: 'Afriex delivers real-time notifications to your configured webhook URL whenever a customer
+    is **created**, **updated**, or **deleted**.
+
+
+    The payload structure is **identical** across all events. Only the `event` field changes.
+
+
+    **Security**: Every request includes an `x-webhook-signature` header. You **must** verify this signature
+    using Afriex''s public key before processing. See the [Webhooks Over'
+  payload_media_type:
+  - application/json
+- channel: payment_method.events
+  operation_id: paymentMethodWebhookEvent
+  summary: Payment Method Events
+  description: 'Afriex delivers real-time notifications to your configured webhook URL whenever a payment
+    method is **created**, **updated**, or **deleted** for a customer.
+
+
+    The payload structure is **identical** across all events. Only the `event` field changes.
+
+
+    **Security**: Every request includes an `x-webhook-signature` header. You **must** verify this signature
+    using Afriex''s public key before processing. S'
+  payload_media_type:
+  - application/json
+- channel: transaction.events
+  operation_id: transactionWebhookEvent
+  summary: Transaction Events
+  description: 'Afriex sends real-time webhook notifications to your configured URL whenever a transaction
+    is **created** or **updated**.
+
+
+    - `TRANSACTION.CREATED`: Fired when a new transaction is initiated.
+
+    - `TRANSACTION.UPDATED`: Fired when the transaction status or other fields change (most commonly `status`
+    and `updatedAt`).
+
+
+    The payload structure is **identical** for both events. Only the `event` field and p'
+  payload_media_type:
+  - application/json
+- channel: checkout_session.events
+  operation_id: checkoutSessionWebhookEvent
+  summary: Checkout Session Events
+  description: 'Afriex delivers a webhook to your configured URL when a hosted checkout session is created.
+    Checkout sessions are currently available in the sandbox/staging environment only.
+
+
+    **Security**: Every request includes an `x-webhook-signature` header. You **must** verify this signature
+    using Afriex''s public key before processing. See the [Webhooks Overview & Security](https://docs.afriex.com/api-referen'
+  payload_media_type:
+  - application/json
+- channel: pool_deposit_request.events
+  operation_id: poolDepositRequestWebhookEvent
+  summary: Pool Deposit Events
+  description: 'Afriex delivers a webhook to your configured URL when a pool account deposit you submitted
+    is rejected during review.
+
+
+    Submitting proof through `POST /api/v1/transaction/pool-account` creates a transaction in `IN_REVIEW`.
+    An operator then confirms or rejects the inflow: approval surfaces as `TRANSACTION.CREATED`, rejection
+    surfaces here. This event cannot be fired from `POST /api/v1/webhooks/trigg'
+  payload_media_type:
+  - application/json
+events:
+- name: CUSTOMER.CREATED
+  resource: CUSTOMER
+- name: CUSTOMER.UPDATED
+  resource: CUSTOMER
+- name: CUSTOMER.DELETED
+  resource: CUSTOMER
+- name: PAYMENT_METHOD.CREATED
+  resource: PAYMENT_METHOD
+- name: PAYMENT_METHOD.UPDATED
+  resource: PAYMENT_METHOD
+- name: PAYMENT_METHOD.DELETED
+  resource: PAYMENT_METHOD
+- name: TRANSACTION.CREATED
+  resource: TRANSACTION
+- name: TRANSACTION.UPDATED
+  resource: TRANSACTION
+- name: CHECKOUT_SESSION.CREATED
+  resource: CHECKOUT_SESSION
+- name: POOL_DEPOSIT_REQUEST.REJECTED
+  resource: POOL_DEPOSIT_REQUEST
+event_count: 10
+security:
+  signature_header: x-webhook-signature
+  algorithm: RSA-SHA256
+  encoding: base64
+  signed_data: raw request body bytes
+  key_source: Dashboard -> Developers -> Webhooks
+  key_note: Staging and production use different public keys.
+  verification_guidance: Verify against raw bytes, never parsed JSON.
+delivery:
+  ack_status: 200 (or any 2xx)
+  ack_budget_seconds: 30
+  failure_response: Return 400 or 401 on signature verification failure.
+  retries: 12
+  backoff: 30s, 1m, 2m, 4m, 8m, 16m, 32m, 1h, 2h, 4h, 8h, 16h
+  source_ips:
+    sandbox: 34.234.189.210
+    production: 34.197.33.100
+  firewall_note: Inbound allowlisting of the Afriex source IPs is required or deliveries are blocked.
+configuration:
+  where: Dashboard -> Developers -> Webhooks
+  subscription_api: null
+  subscription_note: Webhook endpoints are configured in the dashboard UI only. There is no API operation
+    to register, list, update or delete a webhook subscription, so an agent cannot provision its own callback
+    — a human must do it once in the console. triggerWebhook (sandbox) fires a test delivery but does
+    not manage subscriptions.
+testing:
+  operation: triggerWebhook
+  http: POST /api/v1/webhooks/trigger
+  scope: sandbox/staging only
+docs: https://docs.afriex.com/api-reference/endpoint/webhooks/introduction

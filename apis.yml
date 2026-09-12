@@ -1,23 +1,158 @@
 aid: afriex
 name: Afriex
-description: 'Afriex is a company surfaced via the API Evangelist harvest backlog (source: secondary-market)
-  and added to the network as a stub for full-pipeline profiling.'
+description: 'Afriex is a cross-border payments and remittance company that moves money
+  between Africa, North America, Europe and Asia. Its consumer app handles person-to-person
+  remittances, while the Afriex Business API gives companies programmatic access to the
+  same rails: customer onboarding and KYC, payment methods across bank accounts, mobile
+  money, SWIFT, UPI, Interac and USDC/USDT crypto wallets, multi-currency wallet balances
+  and real-time FX rates, deposits, withdrawals and in-wallet currency swaps, hosted
+  checkout sessions, virtual and pool collection accounts, and RSA-signed webhooks for
+  transaction lifecycle events. The API is documented with an OpenAPI 3.1 contract, a
+  first-party TypeScript SDK, and a hosted remote MCP server that exposes the same surface
+  to AI agents.'
+image: https://cdn.prod.website-files.com/62ce94ab2b9c3a3597a7acd4/62f26e44523cfa8d7d76823e_Website%20Open%20Graph.webp
 url: https://raw.githubusercontent.com/api-evangelist/afriex/refs/heads/main/apis.yml
 x-type: company
 x-source: harvest:secondary-market
-x-tier: stub
-x-tier-reason: harvest
 specificationVersion: '0.20'
 created: '2026-09-12'
 modified: '2026-09-12'
+position: Producing
 tags:
-- Company
-apis: []
+- Payments
+- Remittances
+- Cross-Border Payments
+- Fintech
+- Financial Services
+- Foreign Exchange
+- Mobile Money
+- Money Transfer
+- Africa
+- Stablecoins
+- Virtual Accounts
+- Webhooks
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+apis:
+- aid: afriex-business-api
+  name: Afriex Business API
+  description: 'The Afriex Business API is a REST API for cross-border money movement.
+    It covers customer creation and KYC verification, payment-method registration across
+    bank accounts, mobile money, SWIFT, UPI, Interac and crypto wallets, institution and
+    recipient resolution, DEPOSIT / WITHDRAW / SWAP transactions with OTP authorization,
+    multi-currency wallet balances and live FX rates, hosted checkout sessions, virtual
+    and pool collection accounts, SME registration, presigned media upload for KYC
+    documents, and five families of RSA-SHA256 signed webhook events. Authentication is a
+    per-key, permission-scoped x-api-key header; the contract is OpenAPI 3.1 with 32
+    operations and in-spec webhooks.'
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - Payments
+  - Remittances
+  - Cross-Border Payments
+  - Foreign Exchange
+  - Mobile Money
+  - Webhooks
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-business-openapi-original.json
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
+- aid: afriex-mcp-server
+  name: Afriex MCP Server
+  description: 'Afriex publishes a hosted, remote Model Context Protocol server at
+    https://mcp.afriex.com/mcp that exposes 26 tools covering the Business API surface —
+    customers, transactions, payment methods, institutions, crypto wallets, virtual and
+    pool accounts, checkout sessions, balances, FX rates and test webhook triggers. The
+    server initializes anonymously and answers tools/list without credentials; API calls
+    are authenticated per session either with x-afriex-api-key / x-afriex-environment HTTP
+    headers or by calling the authenticate tool as the first action.'
+  humanURL: https://docs.afriex.com/mcp/introduction
+  baseURL: https://mcp.afriex.com/mcp
+  tags:
+  - MCP
+  - Agents
+  - Payments
+  properties:
+  - type: MCPServer
+    url: mcp/afriex-mcp.yml
+  - type: ToolCrosswalk
+    url: mcp/afriex-tool-crosswalk.yml
+  - type: Documentation
+    url: https://docs.afriex.com/mcp/introduction
 common:
+- type: DomainSecurity
+  url: security/afriex-domain-security.yml
 - type: Website
-  url: https://www.nasdaqprivatemarket.com/
+  url: https://www.afriex.com/
+- type: DeveloperPortal
+  url: https://docs.afriex.com/
+- type: Documentation
+  url: https://docs.afriex.com/
+- type: APIReference
+  url: https://docs.afriex.com/api-reference/introduction
+- type: GettingStarted
+  url: https://docs.afriex.com/quickstart
+- type: SignUp
+  url: https://business.afriex.com/
+- type: Support
+  url: mailto:support@afriex.com
+- type: Blog
+  url: https://dev.to/afriex
+- type: GitHubOrganization
+  url: https://github.com/Afri-exchange
+- type: TermsOfService
+  url: https://www.afriex.com/terms-and-condition
+- type: PrivacyPolicy
+  url: https://www.afriex.com/privacy-policy
+- type: StatusPage
+  url: https://afriexinc.statuspage.io
+- type: LLMsTxt
+  url: llms/afriex-llms.txt
+- type: AgentCard
+  url: a2a/afriex-a2a.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: Packages
+  url: packages/afriex-packages.yml
+- type: SDKs
+  url: packages/afriex-packages.yml
+- type: Authentication
+  url: authentication/afriex-authentication.yml
+- type: Conventions
+  url: conventions/afriex-conventions.yml
+- type: Idempotency
+  url: conventions/afriex-conventions.yml
+- type: ErrorCatalog
+  url: errors/afriex-problem-types.yml
+- type: Lifecycle
+  url: lifecycle/afriex-lifecycle.yml
+- type: Conformance
+  url: conformance/afriex-conformance.yml
+- type: DataModel
+  url: data-model/afriex-data-model.yml
+- type: Sandbox
+  url: sandbox/afriex-sandbox.yml
+- type: RateLimits
+  url: rate-limits/afriex-rate-limits.yml
+- type: Plans
+  url: plans/afriex-plans-pricing.yml
+- type: WellKnown
+  url: well-known/afriex-well-known.yml
+- type: Overlay
+  url: overlays/afriex-business-overlay.yaml
+x-enrichment:
+  date: '2026-09-12'
+  status: enriched
+  artifacts_added: 19
+  pass: local-v3

@@ -1,0 +1,55 @@
+generated: '2026-09-12'
+method: searched
+source: registry.npmjs.org + https://docs.afriex.com/sdk/introduction + https://github.com/Afri-exchange
+note: 'One first-party SDK exists and it is current. npm, PyPI, RubyGems and crates.io were
+  queried for an "afriex" package; only the npm scoped package is published. There is no
+  first-party Python, Go, Java, Ruby, PHP or .NET client, which for a payments API whose
+  buyers are often on Python or PHP is the most visible SDK gap. The provider Agent Skill
+  acknowledges it directly, telling callers in "other languages (Python, Go, Java)" to use
+  the REST API with an HTTP client.'
+packages:
+- language: typescript
+  registry: npm
+  name: '@afriex/sdk'
+  url: https://www.npmjs.com/package/@afriex/sdk
+  install: npm install @afriex/sdk
+  official: true
+  version: 4.1.0
+  published: '2026-08-18'
+  description: Official TypeScript SDK for the Afriex Business API
+  source_code: https://github.com/Afri-exchange/afriex-sdk
+  docs: https://docs.afriex.com/sdk/introduction
+  repo_last_push: '2026-08-26'
+  capabilities:
+  - Typed clients for customers, payment methods, transactions and rates
+  - Built-in retry logic
+  - Webhook signature verification
+  currency_note: 'Current. Published 2026-08-18 against an API contract at version 1.0.13,
+    with the backing repository pushed 2026-08-26 — the SDK is tracking the API rather than
+    lagging it.'
+  coverage_note: 'The Agent Skill states that SME registration, media upload and settlement
+    advice are not in the SDK and must be called over REST directly.'
+registries_checked:
+- {registry: npm, query: '@afriex/sdk', result: found, version: 4.1.0, published: '2026-08-18'}
+- {registry: npm, query: afriex-sdk, result: not-found}
+- {registry: pypi, query: afriex, result: not-found, status: 404}
+- {registry: rubygems, query: afriex, result: not-found, status: 404}
+- {registry: crates.io, query: afriex, result: not-found, status: 404}
+third_party:
+- name: codewithveek/afriex-sdk
+  url: https://github.com/codewithveek/afriex-sdk
+  official: false
+  version: null
+  published: null
+  note: 'A GitHub repository describing itself as an official TypeScript SDK for the Afriex
+    Business API, but it sits under an individual account rather than the Afri-exchange org
+    and is not the source of the published @afriex/sdk package, whose repository field points
+    at github.com/Afri-exchange/afriex-sdk. Recorded as third-party and NOT marked official.
+    No registry version is recorded because it publishes under no registry name found.'
+github_organization:
+  url: https://github.com/Afri-exchange
+  name: Afriex
+  public_repos: 6
+  note: 'Six public repos, of which one (afriex-sdk) is an API client. The remainder are
+    forks of unrelated React Native and admin-template projects, several dormant since
+    2018-2022. There is no public examples, server-SDK or Postman repository.'

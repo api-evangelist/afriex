@@ -1,0 +1,105 @@
+generated: '2026-09-12'
+method: derived
+source: openapi/afriex-business-openapi-original.json + https://docs.afriex.com/
+note: 'Derived from the contract and the published docs. Afriex publishes no compliance
+  program page, no trust center and no named certifications on any public surface probed, so
+  no Compliance pointer is emitted — this file asserts technical standards conformance only.'
+standards:
+- id: openapi-3.1
+  conforms: true
+  evidence: 'openapi: 3.1.0 with 25 paths, 32 operations, 21 component schemas and a
+    top-level webhooks block.'
+- id: oauth2
+  conforms: false
+  evidence: 'No oauth2 securityScheme. Authentication is a static apiKey in the x-api-key
+    header; the MCP server likewise uses an API-key header, not OAuth.'
+- id: oidc
+  conforms: false
+  evidence: /.well-known/openid-configuration 404s on all seven probed hosts.
+- id: rfc9457-problem-details
+  conforms: false
+  evidence: 'Errors are application/json against a vendor ErrorResponse schema
+    {code, error, details}, not application/problem+json. The envelope is consistent across
+    all operations but is not the RFC 9457 shape.'
+- id: rfc9116-security-txt
+  conforms: false
+  evidence: /.well-known/security.txt 404s on all seven probed hosts.
+- id: rfc8594-sunset-header
+  conforms: false
+  evidence: No Sunset or Deprecation header support documented; no deprecation policy published.
+- id: a2a-agent-card
+  conforms: true
+  grade: flavored
+  evidence: 'https://docs.afriex.com/.well-known/agent-card.json returns 200 with a valid
+    AgentCard object (capabilities object, protocolVersion 0.3, skills array). Graded
+    flavored for using supportedInterfaces where A2A 1.0.0 names additionalInterfaces. See
+    a2a/afriex-a2a.yml.'
+- id: model-context-protocol
+  conforms: true
+  evidence: 'Hosted remote MCP server at https://mcp.afriex.com/mcp. initialize returned
+    protocolVersion 2025-06-18 and tools/list returned 26 tools with inputSchema over an
+    anonymous session (probed 2026-09-12).'
+- id: llms-txt
+  conforms: true
+  evidence: 'https://docs.afriex.com/llms.txt returns 200 with a complete page index and an
+    OpenAPI Specs section pointing at the contract.'
+- id: idempotency
+  conforms: partial
+  evidence: 'meta.idempotencyKey on createTransaction and authorizeTransaction, plus
+    server-side dedupe on getCryptoWallet and submitPoolAccountPaymentProof. Body-field
+    scoped, not a transport header, so it does not span the mutating surface. See
+    conventions/afriex-conventions.yml.'
+- id: pagination
+  conforms: true
+  evidence: 'Uniform page/limit query parameters (zero-indexed, limit max 100) with a
+    {page, total, data} response envelope across all list operations.'
+- id: webhook-signing
+  conforms: true
+  evidence: 'RSA-SHA256 base64 signature in x-webhook-signature over raw request body, with
+    separate staging and production public keys and a documented 12-attempt retry schedule.'
+- id: e164-phone-numbers
+  conforms: true
+  evidence: 'Customer phone numbers are required in E.164 format; a mismatch against
+    countryCode is rejected with PHONE_COUNTRY_MISMATCH.'
+- id: iso-4217-currency-codes
+  conforms: true
+  evidence: Currencies are expressed as ISO 4217 alphabetic codes throughout (USD, NGN, KES, GHS, ...).
+- id: iso-3166-country-codes
+  conforms: true
+  evidence: countryCode parameters use ISO 3166 alpha-2 codes.
+- id: swift-bic
+  conforms: true
+  evidence: 'resolveInstitutionCode accepts a SWIFT/BIC code or a US routing number as
+    codeType and resolves it to an institution name; the SWIFT payment channel is a
+    first-class payment-method type.'
+domain_standards:
+  regime: financial-services / cross-border-payments
+  note: 'Reward-only check. Afriex serves a market that does have domain standards (ISO
+    20022 for payment messaging, PSD2/Open Banking for European account access, FDX for
+    financial data sharing), and the contract declares NONE of them. What it does declare
+    are the correspondent-banking identifier schemes below, which are real domain signals
+    but sit a level below a full message standard. Nothing has been invented to fill the
+    slot.'
+  declared:
+  - id: swift-bic-identifiers
+    conforms: true
+    evidence: 'GET /api/v1/payment-method/institution/codes — codeType accepts SWIFT and
+      routing number; PaymentMethod supports a SWIFT channel with bank address fields.'
+  - id: us-aba-routing-numbers
+    conforms: true
+    evidence: Same operation resolves US routing numbers to institution names.
+  not_declared:
+  - {id: iso-20022, conforms: false, evidence: 'No pain/pacs/camt message types, no ISO 20022 element names in any schema.'}
+  - {id: psd2-open-banking, conforms: false, evidence: 'No PSD2/OBIE endpoints, no strong-customer-authentication flows, no consent resource.'}
+  - {id: fdx, conforms: false, evidence: No FDX resources or FDX-shaped account/transaction models.}
+compliance_program:
+  published: false
+  trust_center: null
+  certifications: []
+  note: 'No trust center, no SOC 2 / ISO 27001 / PCI DSS statement, and no compliance page
+    was found. probe-security-programs.py returned vdp=none trust=none on 2026-09-12, and
+    afriex.com/security 404s. The contract does reference an internal compliance review
+    gating virtual-account issuance (VIRTUAL_ACCOUNT_PENDING_COMPLIANCE_REVIEW), which shows
+    a compliance function exists operationally, but that is not a published program. For a
+    licensed money transmitter this is a notable public-surface gap; no Compliance pointer is
+    emitted because nothing is published to point at.'

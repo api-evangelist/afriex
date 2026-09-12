@@ -1,0 +1,61 @@
+generated: '2026-09-12'
+method: probed
+source: https://docs.afriex.com/.well-known/agent-card.json
+discovery:
+  path: /.well-known/agent-card.json
+  canonical: true
+  host: docs.afriex.com
+  note: 'Served from the documentation host, not the registrable domain. afriex.com,
+    www.afriex.com, api.afriex.com, sandbox.api.afriex.com, mcp.afriex.com and
+    business.afriex.com all 404 both the canonical and the legacy /.well-known/agent.json
+    path. A negative-control path that cannot exist also 404s on docs.afriex.com, so this
+    is a genuinely served document and not an SPA catch-all.'
+conformance:
+  spec: A2A 1.0.0
+  grade: flavored
+  protocol_version: '0.3'
+  preferred_transport: HTTP+JSON
+  hard_checks:
+    capabilities_is_object: true
+    protocol_version_present: true
+    skills_is_array: true
+  deviations:
+  - supportedInterfaces-not-additionalInterfaces
+  - protocolVersion-not-full-semver
+  deviation_notes: 'All three hard shape checks pass — capabilities is an object,
+    protocolVersion is present, skills is an array — and the optional preferredTransport,
+    defaultInputModes and defaultOutputModes are all populated, which is more than most
+    published cards carry. It is graded flavored rather than conformant on one named
+    deviation: the card declares its transport list under supportedInterfaces, where A2A
+    1.0.0 names the field additionalInterfaces. protocolVersion is also "0.3" rather than a
+    full "0.3.0" semver. Both are shape deviations, not missing capability.'
+card:
+  name: Afriex Business API
+  url: https://docs.afriex.com/
+  version: 1.0.0
+  organization: Afriex Business API
+  documentation_url: https://docs.afriex.com/
+  capabilities:
+    streaming: false
+    push_notifications: false
+  skills: 1
+  skill_ids: [afriex]
+  file: afriex-agent-card.json
+linked_skill:
+  url: https://docs.afriex.com/.well-known/agent-skills/afriex/skill.md
+  http_status: 200
+  content_type: text/markdown
+  bytes: 12851
+  saved: skills/afriex-business-api-skill.md
+  note: 'The card''s single skill points at a provider-authored Agent Skill markdown file,
+    which was fetched and saved verbatim. This is a provider-published skill, not one this
+    pipeline generated.'
+x-evidence:
+  fetched: '2026-09-12'
+  url: https://docs.afriex.com/.well-known/agent-card.json
+  http_status: 200
+  content_type: application/json
+  bytes: 982
+  negative_control:
+    url: https://docs.afriex.com/.well-known/afriex-negative-control-7f3ab91c.json
+    http_status: 404

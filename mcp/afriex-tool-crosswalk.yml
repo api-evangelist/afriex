@@ -1,0 +1,229 @@
+generated: '2026-09-12'
+method: derived
+source: mcp/afriex-mcp-tools.json (live tools/list, probed 2026-09-12) bound to openapi/afriex-business-openapi-original.json
+note: 'Both surfaces were read live, so every binding below is name-and-schema verified rather than guessed:
+  the 26 MCP tools came from an anonymous tools/list against https://mcp.afriex.com/mcp with their real
+  inputSchema, and the 32 REST operations from the provider OpenAPI 3.1 contract. Each bound tool inherits
+  its backing operation parameters and requestBody as its real input contract.'
+surfaces:
+  openapi:
+    file: openapi/afriex-business-openapi-original.json
+    operations: 32
+    gated: false
+    source_url: https://api.afriex.com/api/docs.json
+  mcp:
+    url: https://mcp.afriex.com/mcp
+    transport: http
+    tools: 26
+    gated: false
+    note: initialize and tools/list answer anonymously; tool INVOCATION requires an Afriex API key via
+      x-afriex-api-key header or the authenticate tool.
+  graphql: null
+crosswalk:
+- tool: create_customer
+  category: customers
+  rest:
+  - createCustomer
+  binding: rest
+  confidence: high
+  http: POST /api/v1/customer
+- tool: list_customers
+  category: customers
+  rest:
+  - listCustomers
+  binding: rest
+  confidence: high
+  http: GET /api/v1/customer
+- tool: get_customer
+  category: customers
+  rest:
+  - getCustomer
+  binding: rest
+  confidence: high
+  http: GET /api/v1/customer/{customerId}
+- tool: delete_customer
+  category: customers
+  rest:
+  - deleteCustomer
+  binding: rest
+  confidence: high
+  http: DELETE /api/v1/customer/{customerId}
+- tool: update_customer_kyc
+  category: customers
+  rest:
+  - updateCustomerKyc
+  binding: rest
+  confidence: high
+  http: PATCH /api/v1/customer/{customerId}/kyc
+- tool: create_transaction
+  category: transactions
+  rest:
+  - createTransaction
+  binding: rest
+  confidence: high
+  http: POST /api/v1/transaction
+- tool: list_transactions
+  category: transactions
+  rest:
+  - listTransactions
+  binding: rest
+  confidence: high
+  http: GET /api/v1/transaction
+- tool: get_transaction
+  category: transactions
+  rest:
+  - getTransaction
+  binding: rest
+  confidence: high
+  http: GET /api/v1/transaction/{transactionId}
+- tool: create_payment_method
+  category: payment-methods
+  rest:
+  - createPaymentMethod
+  binding: rest
+  confidence: high
+  http: POST /api/v1/payment-method
+- tool: list_payment_methods
+  category: payment-methods
+  rest:
+  - listPaymentMethods
+  binding: rest
+  confidence: high
+  http: GET /api/v1/payment-method
+- tool: get_payment_method
+  category: payment-methods
+  rest:
+  - getPaymentMethod
+  binding: rest
+  confidence: high
+  http: GET /api/v1/payment-method/{paymentMethodId}
+- tool: delete_payment_method
+  category: payment-methods
+  rest:
+  - deletePaymentMethod
+  binding: rest
+  confidence: high
+  http: DELETE /api/v1/payment-method/{paymentMethodId}
+- tool: list_institutions
+  category: payment-methods
+  rest:
+  - listInstitutions
+  binding: rest
+  confidence: high
+  http: GET /api/v1/payment-method/institution
+- tool: resolve_institution_codes
+  category: payment-methods
+  rest:
+  - resolveInstitutionCode
+  binding: rest
+  confidence: high
+  http: GET /api/v1/payment-method/institution/codes
+- tool: resolve_payment_method
+  category: payment-methods
+  rest:
+  - resolveRecipient
+  binding: rest
+  confidence: high
+  http: GET /api/v1/payment-method/resolve
+- tool: get_crypto_wallet
+  category: payment-methods
+  rest:
+  - getCryptoWallet
+  binding: rest
+  confidence: high
+  http: GET /api/v1/payment-method/crypto-wallet
+- tool: list_virtual_accounts
+  category: payment-methods
+  rest:
+  - listVirtualAccounts
+  binding: rest
+  confidence: high
+  http: GET /api/v1/payment-method/virtual-account
+- tool: create_virtual_account
+  category: payment-methods
+  rest:
+  - createVirtualAccount
+  binding: rest
+  confidence: high
+  http: POST /api/v1/payment-method/virtual-account
+- tool: get_pool_account
+  category: payment-methods
+  rest:
+  - getPoolAccount
+  binding: rest
+  confidence: high
+  http: GET /api/v1/payment-method/pool-account
+- tool: create_checkout_session
+  category: checkout
+  rest:
+  - createCheckoutSession
+  binding: rest
+  confidence: high
+  http: POST /api/v1/checkout-session
+- tool: get_balance
+  category: organization
+  rest:
+  - getBalance
+  binding: rest
+  confidence: high
+  http: GET /api/v1/org/balance
+- tool: topup_balance
+  category: organization
+  rest:
+  - topupBalance
+  binding: rest
+  confidence: high
+  http: POST /api/v1/org/balance/topup
+- tool: get_rates
+  category: organization
+  rest:
+  - getRates
+  binding: rest
+  confidence: high
+  http: GET /api/v1/org/rates
+- tool: trigger_webhook
+  category: webhooks
+  rest:
+  - triggerWebhook
+  binding: rest
+  confidence: high
+  http: POST /api/v1/webhooks/trigger
+mcp_only:
+- tool: authenticate
+  reason: Session credential setup for the MCP server itself. Sets the API key and environment for the
+    session; has no REST counterpart because REST callers send x-api-key on every request.
+- tool: session_info
+  reason: Server-side session introspection (masked API key, environment, resolved base URL). Exists only
+    in the MCP session model; no REST operation exposes it.
+rest_only:
+- operation: updateCustomer
+  http: PATCH /api/v1/customer/{customerId}
+  capability: Customers
+- operation: verifyCustomer
+  http: POST /api/v1/customer/{customerId}/verify
+  capability: Customers
+- operation: authorizeTransaction
+  http: POST /api/v1/transaction/{transactionId}/authorize
+  capability: Transactions
+- operation: getTransactionAdvice
+  http: GET /api/v1/transaction/{transactionId}/advice
+  capability: Transactions
+- operation: submitPoolAccountPaymentProof
+  http: POST /api/v1/transaction/pool-account
+  capability: Transactions
+- operation: generatePresignedURL
+  http: POST /api/v1/media/url
+  capability: Media
+- operation: smeRegistration
+  http: POST /api/v1/sme-registration
+  capability: SME Registration
+- operation: smeRegistrationStatus
+  http: GET /api/v1/sme-registration/status
+  capability: SME Registration
+coverage:
+  tools_total: 26
+  tools_bound: 24
+  mcp_only: 2
+  rest_operations_total: 32
+  rest_operations_with_tool: 24
+  rest_operations_without_tool: 8

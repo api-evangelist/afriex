@@ -1,0 +1,1136 @@
+{
+  "tools": [
+    {
+      "name": "authenticate",
+      "description": "Set the API key and optionally the environment for this session. Required before using other tools unless authenticated via x-afriex-api-key / x-afriex-environment HTTP headers or the AFRIEX_API_KEY environment variable.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Your Afriex Business API key"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "production",
+              "development"
+            ],
+            "description": "Target environment. \"development\" uses the sandbox API, \"production\" uses the live API. Defaults to \"development\" if not specified."
+          }
+        },
+        "required": [
+          "apiKey"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "session_info",
+      "description": "Get the current session configuration: masked API key, environment, and API base URL. Useful for verifying which environment and credentials are active.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "create_customer",
+      "description": "Create a new customer with name, email, phone, and country code. Optionally include KYC and metadata.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Full name of the customer"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address of the customer"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+\\d{7,15}$",
+            "description": "Phone number in E.164 format (e.g. +2348192837465)"
+          },
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2,
+            "pattern": "^[A-Z]{2}$",
+            "description": "ISO 3166-1 alpha-2 country code (e.g. NG, US, GB, KE)"
+          },
+          "kyc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Optional KYC document details"
+          },
+          "meta": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Optional metadata to attach to the customer"
+          }
+        },
+        "required": [
+          "fullName",
+          "email",
+          "phone",
+          "countryCode"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_customers",
+      "description": "Retrieve a paginated list of customers. Optionally filter by email (exact match, case-insensitive) or phone (E.164 format).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Page number (starting from 0, default 0)"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "description": "Number of items per page (1-50, default 10)"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Filter by customer email address (exact match, case-insensitive)"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+\\d{7,15}$",
+            "description": "Filter by customer phone number in E.164 format"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_customer",
+      "description": "Retrieve a specific customer by their unique identifier.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The unique identifier of the customer"
+          }
+        },
+        "required": [
+          "customerId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "delete_customer",
+      "description": "Delete a specific customer by their unique identifier.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The unique identifier of the customer"
+          }
+        },
+        "required": [
+          "customerId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "destructiveHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "update_customer_kyc",
+      "description": "Update KYC information for a customer. KYC keys should be document types like PASSPORT, DATE_OF_BIRTH, COUNTRY.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The unique identifier of the customer"
+          },
+          "kyc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "KYC data as key-value pairs (e.g. {\"PASSPORT\": \"passport.png\", \"DATE_OF_BIRTH\": \"2000-01-01\"})"
+          }
+        },
+        "required": [
+          "customerId",
+          "kyc"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "create_transaction",
+      "description": "Create a new transaction. WITHDRAW sends funds to a destination payment method (requires customerId and destinationId). DEPOSIT pulls funds from a source payment method (requires customerId and sourceId). SWAP converts funds between currencies within the Afriex wallet \u2014 only sourceCurrency, destinationCurrency, sourceAmount, and meta are required. Type defaults to WITHDRAW if not specified.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "The unique identifier of the customer. Required for DEPOSIT and WITHDRAW. Not required for SWAP."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "DEPOSIT",
+              "WITHDRAW",
+              "SWAP"
+            ],
+            "description": "Transaction type. WITHDRAW sends funds to a destination (requires destinationId). DEPOSIT pulls funds from a source (requires sourceId). Defaults to WITHDRAW."
+          },
+          "sourceAmount": {
+            "type": "string",
+            "description": "Amount in the source currency"
+          },
+          "destinationAmount": {
+            "type": "string",
+            "description": "Amount in the destination currency"
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "minLength": 1,
+            "description": "ISO 4217 currency code of the source (e.g. USD, NGN)"
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "minLength": 1,
+            "description": "ISO 4217 currency code of the destination (e.g. USD, NGN)"
+          },
+          "destinationId": {
+            "type": "string",
+            "description": "Required for WITHDRAW transactions. The ID of the destination payment method that money will be sent to."
+          },
+          "sourceId": {
+            "type": "string",
+            "description": "Required for DEPOSIT transactions. The ID of the source payment method that money will be pulled from."
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "narration": {
+                "type": "string"
+              },
+              "invoice": {
+                "type": "string"
+              },
+              "idempotencyKey": {
+                "type": "string"
+              },
+              "reference": {
+                "type": "string"
+              },
+              "merchantId": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional metadata (narration, invoice, idempotencyKey, reference, merchantId)"
+          }
+        },
+        "required": [
+          "sourceCurrency",
+          "destinationCurrency"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_transactions",
+      "description": "Retrieve a paginated list of transactions. Supports filtering by transactionId, reference, status, type, channel, currency, and date range.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Page number (starting from 0, default 0)"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "description": "Number of items per page (1-50, default 10)"
+          },
+          "transactionId": {
+            "type": "string",
+            "description": "Filter by the Afriex transactionId"
+          },
+          "reference": {
+            "type": "string",
+            "description": "Filter by merchant-supplied meta.reference"
+          },
+          "status": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "PROCESSING",
+                "SUCCESS",
+                "FAILED",
+                "CANCELLED",
+                "REFUNDED",
+                "RETRY",
+                "UNKNOWN",
+                "SCHEDULED",
+                "CUSTOMER_ACTION_REQUIRED",
+                "REJECTED",
+                "IN_REVIEW",
+                "DISPUTED",
+                "DISPUTE_RESOLVED",
+                "DISPUTE_WON",
+                "DISPUTE_LOST",
+                "DISPUTE_EVIDENCE_SUBMITTED"
+              ]
+            },
+            "description": "Filter by one or more transaction statuses"
+          },
+          "type": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "DEPOSIT",
+                "WITHDRAW",
+                "SWAP",
+                "REVERSAL",
+                "SCHEDULED",
+                "SEND"
+              ]
+            },
+            "description": "Filter by one or more transaction types"
+          },
+          "channel": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "BANK_ACCOUNT",
+                "MOBILE_MONEY",
+                "CARD",
+                "CRYPTO",
+                "VIRTUAL_BANK_ACCOUNT",
+                "ACH_BANK_ACCOUNT",
+                "INTERAC",
+                "PAYBILL_TILL",
+                "RFP",
+                "UPI",
+                "VIRTUAL_CARD",
+                "SWIFT",
+                "WE_CHAT",
+                "ALIPAY",
+                "WALLET"
+              ]
+            },
+            "description": "Filter by one or more payment channels"
+          },
+          "currency": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by one or more ISO 4217 currency codes"
+          },
+          "fromDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Return transactions created on or after this ISO 8601 datetime"
+          },
+          "toDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Return transactions created on or before this ISO 8601 datetime"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_transaction",
+      "description": "Retrieve a specific transaction by its unique identifier. Returns transaction details including status, amounts, and currencies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "transactionId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The unique identifier of the transaction"
+          }
+        },
+        "required": [
+          "transactionId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "create_payment_method",
+      "description": "Create a new payment method for a customer. Supports BANK_ACCOUNT, SWIFT, MOBILE_MONEY, UPI, INTERAC, and WE_CHAT channels. Institution requires at least institutionCode or institutionName.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "BANK_ACCOUNT",
+              "SWIFT",
+              "MOBILE_MONEY",
+              "UPI",
+              "INTERAC",
+              "WE_CHAT"
+            ],
+            "description": "The payment method channel"
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The unique identifier of the customer"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "DEPOSIT",
+              "WITHDRAW"
+            ],
+            "description": "Transaction capability. DEPOSIT = pull funds, WITHDRAW = send funds. Defaults to WITHDRAW."
+          },
+          "accountName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Name of the account holder"
+          },
+          "accountNumber": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The account number"
+          },
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2,
+            "pattern": "^[A-Z]{2}$",
+            "description": "ISO 3166-1 alpha-2 country code"
+          },
+          "institution": {
+            "type": "object",
+            "properties": {
+              "institutionId": {
+                "type": "string"
+              },
+              "institutionName": {
+                "type": "string"
+              },
+              "institutionCode": {
+                "type": "string"
+              },
+              "institutionAddress": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Bank or provider details"
+          },
+          "recipient": {
+            "type": "object",
+            "properties": {
+              "recipientEmail": {
+                "type": "string"
+              },
+              "recipientPhone": {
+                "type": "string"
+              },
+              "recipientAddress": {
+                "type": "string"
+              },
+              "recipientName": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Recipient details"
+          },
+          "transaction": {
+            "type": "object",
+            "properties": {
+              "transactionInvoice": {
+                "type": "string"
+              },
+              "transactionNarration": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "description": "Transaction metadata"
+          }
+        },
+        "required": [
+          "channel",
+          "customerId",
+          "accountName",
+          "accountNumber",
+          "countryCode",
+          "institution"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_payment_methods",
+      "description": "Retrieve a paginated list of payment methods with pagination info.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Page number (starting from 0, default 0)"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "description": "Number of items per page (1-50, default 10)"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_payment_method",
+      "description": "Retrieve a specific payment method by its unique identifier.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "paymentMethodId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The unique identifier of the payment method"
+          }
+        },
+        "required": [
+          "paymentMethodId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "delete_payment_method",
+      "description": "Delete a payment method by its unique identifier.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "paymentMethodId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The unique identifier of the payment method"
+          }
+        },
+        "required": [
+          "paymentMethodId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "destructiveHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_institutions",
+      "description": "Get a list of banks or mobile money providers available for a specific country and channel.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The payment method channel (e.g. BANK_ACCOUNT, MOBILE_MONEY)"
+          },
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2,
+            "pattern": "^[A-Z]{2}$",
+            "description": "ISO 3166-1 alpha-2 country code (e.g. NG, US, KE)"
+          }
+        },
+        "required": [
+          "channel",
+          "countryCode"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "resolve_institution_codes",
+      "description": "Resolve a SWIFT code or US routing number to the corresponding bank name.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The SWIFT code or routing number to resolve"
+          },
+          "country": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Country (currently only US supported)"
+          },
+          "codeType": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Type of code to resolve (swift_code or routing_number)"
+          }
+        },
+        "required": [
+          "searchTerm",
+          "country",
+          "codeType"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "resolve_payment_method",
+      "description": "Resolve recipient info by account number or phone number for BANK_ACCOUNT or MOBILE_MONEY channels. accountNumber is required for BANK_ACCOUNT, phone number for MOBILE_MONEY.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The payment method channel to resolve (MOBILE_MONEY or BANK_ACCOUNT)"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Bank account number (for BANK_ACCOUNT) or phone number (for MOBILE_MONEY)"
+          },
+          "institutionCode": {
+            "type": "string",
+            "description": "Bank code (required for BANK_ACCOUNT channel)"
+          },
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2,
+            "pattern": "^[A-Z]{2}$",
+            "description": "ISO 3166-1 alpha-2 country code"
+          }
+        },
+        "required": [
+          "channel",
+          "countryCode"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_crypto_wallet",
+      "description": "Get or create a crypto wallet for USDT or USDC. Production only. Returns wallet addresses for the specified asset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "asset": {
+            "type": "string",
+            "enum": [
+              "USDT",
+              "USDC"
+            ],
+            "description": "The crypto asset symbol"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Optional customer ID. If omitted, wallet is for the business."
+          }
+        },
+        "required": [
+          "asset"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_virtual_accounts",
+      "description": "List existing virtual accounts for a currency. Read-only: returns an empty list when no virtual accounts exist. Pass customerId to scope to a specific end-user; omit it to list the business owner virtual accounts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD",
+              "NGN",
+              "GBP",
+              "EUR"
+            ],
+            "description": "ISO 4217 currency code for the virtual account"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Optional customer ID. If omitted, lists the business owner virtual accounts."
+          }
+        },
+        "required": [
+          "currency"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "create_virtual_account",
+      "description": "Create a virtual account for USD, NGN, GBP, or EUR. Pass amount for a dynamic (ephemeral) virtual account, or label for a static one. amount and label are mutually exclusive.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD",
+              "NGN",
+              "GBP",
+              "EUR"
+            ],
+            "description": "ISO 4217 currency code for the virtual account"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Optional customer ID. If omitted, the VA is created for the business owner."
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5000000,
+            "description": "Optional amount for a dynamic virtual account. Mutually exclusive with label. Max 5,000,000."
+          },
+          "label": {
+            "type": "string",
+            "enum": [
+              "SALES",
+              "OPERATIONS",
+              "PAYROLL",
+              "COLLECTIONS",
+              "VENDOR_PAYMENTS",
+              "TAX",
+              "REFUNDS",
+              "MARKETING",
+              "TREASURY",
+              "GENERAL"
+            ],
+            "description": "Optional label that groups static virtual accounts by purpose. Mutually exclusive with amount."
+          }
+        },
+        "required": [
+          "currency"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_pool_account",
+      "description": "Get the business pool account for a country. Use the `reference` on the response to reconcile incoming deposits.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2,
+            "pattern": "^[A-Z]{2}$",
+            "description": "ISO 3166-1 alpha-2 country code (e.g. NG, GH)"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Optional customer ID to associate with this account."
+          }
+        },
+        "required": [
+          "country"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "create_checkout_session",
+      "description": "Create a hosted checkout session and return a checkoutUrl to redirect the customer to. Amount is in minor currency units (e.g. kobo for NGN, cents for USD).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "minimum": 100,
+            "description": "Transaction amount in minor currency units (e.g. 500000 = 5000.00). Minimum 100."
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "description": "Uppercase 3-letter ISO 4217 currency code (e.g. NGN)"
+          },
+          "merchantReference": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique merchant-supplied reference for this session"
+          },
+          "redirectUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "HTTPS URL the customer is redirected to after checkout"
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Full name of the customer"
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "description": "Email address of the customer"
+              },
+              "phone": {
+                "type": "string",
+                "pattern": "^\\+\\d{7,15}$",
+                "description": "Phone number in E.164 format"
+              },
+              "countryCode": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 2,
+                "pattern": "^[A-Z]{2}$",
+                "description": "ISO 3166-1 alpha-2 country code (uppercase)"
+              }
+            },
+            "required": [
+              "name",
+              "email",
+              "phone",
+              "countryCode"
+            ],
+            "additionalProperties": false,
+            "description": "Customer details for the checkout session"
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "VIRTUAL_BANK_ACCOUNT",
+                "MOBILE_MONEY",
+                "CARD"
+              ]
+            },
+            "minItems": 1,
+            "description": "Payment channels to allow, as a cap rather than an exact list: the API drops any the currency cannot collect on and returns what the customer will actually be shown. Safe to omit, in which case every channel is requested and the API picks."
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Optional flat string-keyed/string-valued metadata to attach to the session."
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "merchantReference",
+          "redirectUrl",
+          "customer"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_balance",
+      "description": "Fetch wallet balances for specified currencies. Returns a map of currency codes to balance amounts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "currencies": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Comma-separated list of ISO 4217 currency codes (e.g. \"USD,NGN,EUR\")"
+          }
+        },
+        "required": [
+          "currencies"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "topup_balance",
+      "description": "Top up sandbox balance. Credits the business wallet with the specified amount and currency. Only available in sandbox/staging environment \u2014 returns 403 Forbidden in production.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "A positive number representing the amount to credit"
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "description": "Uppercase 3-letter ISO 4217 currency code (e.g. USD, NGN, GBP)"
+          }
+        },
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_rates",
+      "description": "Get real-time exchange rates. Optionally filter by base currencies (fromSymbols) and/or target currencies (toSymbols). Returns a map of base currencies to their exchange rates against other currencies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fromSymbols": {
+            "type": "string",
+            "description": "Comma-separated list of base currency symbols (e.g. \"USD,NGN,EUR\")"
+          },
+          "toSymbols": {
+            "type": "string",
+            "description": "Comma-separated list of target currency symbols (e.g. \"NGN,EUR,GBP\")"
+          }
+        },
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "idempotentHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "trigger_webhook",
+      "description": "Fire a real signed webhook to the configured callback URL using a real entity as the payload. Sandbox-only: returns 403 in production. Useful for testing webhook handlers without manufacturing the underlying activity.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": [
+              "CUSTOMER.CREATED",
+              "CUSTOMER.UPDATED",
+              "CUSTOMER.DELETED",
+              "PAYMENT_METHOD.CREATED",
+              "PAYMENT_METHOD.UPDATED",
+              "PAYMENT_METHOD.DELETED",
+              "TRANSACTION.CREATED",
+              "TRANSACTION.UPDATED",
+              "CHECKOUT_SESSION.CREATED"
+            ],
+            "description": "The webhook event to trigger"
+          },
+          "entityId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Identifier of the entity to send. UUID v4 for CHECKOUT_SESSION.CREATED; otherwise 24-char Mongo ObjectId."
+          }
+        },
+        "required": [
+          "event",
+          "entityId"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      },
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ]
+}

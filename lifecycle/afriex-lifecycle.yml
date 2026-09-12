@@ -1,0 +1,62 @@
+generated: '2026-09-12'
+method: searched
+source: https://docs.afriex.com/api-reference/introduction
+versioning:
+  scheme: date-header
+  header: x-api-version
+  current: '2026-05-18'
+  supported_versions: ['2026-05-18']
+  default_when_omitted: '2026-05-18'
+  rejection: 400 Bad Request with an "Unsupported API version" message on any other value
+  path_prefix: /api/v1
+  path_prefix_note: '/api/v1 is a fixed path prefix, not a version train — version
+    negotiation happens entirely through the x-api-version date header.'
+  docs: https://docs.afriex.com/api-reference/introduction
+deprecation:
+  policy_url: null
+  sunset_header: false
+  deprecation_header: false
+  note: 'No deprecation or sunset policy is published, and no RFC 8594 Sunset or Deprecation
+    header is documented. The API is on its first and only dated version (2026-05-18), so
+    nothing has yet been deprecated, but there is also no stated contract for how a future
+    version would be retired or how much notice callers would get. No Deprecation pointer
+    is emitted, because no policy exists to point at.'
+deprecated_operations: []
+deprecated_operations_note: 'Zero of the 32 operations carry deprecated: true in the
+  OpenAPI contract.'
+status_page:
+  url: https://afriexinc.statuspage.io
+  platform: Atlassian Statuspage
+  machine_readable: https://afriexinc.statuspage.io/api/v2/summary.json
+  probed: '2026-09-12'
+  http_status: 200
+  page_name: Afriex Inc
+  indicator_at_probe: none
+  components_observed:
+  - API
+  - Sign-up & Verification
+  - Nigeria
+  - Kenya
+  - Ghana
+  - United States
+  - Canada
+  - United Kingdom
+  - India
+  - Europe
+  note: 'A real hosted Statuspage with a v2 JSON API, broken out per payment corridor plus a
+    dedicated API component — an agent or monitor can poll summary.json unauthenticated.'
+sla:
+  url: null
+  uptime_target: null
+  note: 'No published SLA or uptime commitment was found on the website, the docs or the
+    status page.'
+changelog:
+  url: null
+  note: 'No dated changelog or release-notes page exists. /changelog, /release-notes and
+    /api-reference/changelog on docs.afriex.com all return 404 (probed 2026-09-12). The
+    OpenAPI info.version (1.0.13) is the only published version marker that moves, and it
+    is not accompanied by any record of what changed. No ChangeLog artifact or pointer is
+    emitted rather than inventing entries.'
+support:
+  email: support@afriex.com
+  dashboard: https://business.afriex.com/

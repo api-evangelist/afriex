@@ -1,0 +1,63 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for the Afriex Business API
+  version: 1.0.0
+extends: openapi/afriex-business-openapi-original.json
+x-generated: '2026-09-12'
+x-method: generated
+x-source: 'Derived from artifacts in this repo; applies API Evangelist annotations without
+  mutating the harvested contract.'
+actions:
+- target: $.info
+  update:
+    x-apievangelist-profile: https://apis.io/provider/afriex/
+    x-apievangelist-harvested: '2026-09-12'
+    x-apievangelist-spec-source: https://api.afriex.com/api/docs.json
+    x-apievangelist-spec-mirror: https://docs.afriex.com/api-reference/openapi.json
+    x-apievangelist-agent-surfaces:
+      mcp: https://mcp.afriex.com/mcp
+      agent_card: https://docs.afriex.com/.well-known/agent-card.json
+      agent_skill: https://docs.afriex.com/.well-known/agent-skills/afriex/skill.md
+      llms_txt: https://docs.afriex.com/llms.txt
+- target: $.info
+  update:
+    x-apievangelist-conventions:
+      idempotency_coverage: partial
+      idempotency_mechanism: meta.idempotencyKey (request-body field, not a transport header)
+      reversibility: absent
+      pagination: page/limit, zero-indexed, max limit 100
+      error_envelope: 'vendor {code, error, details}; not RFC 9457'
+      versioning: x-api-version date header, single supported version 2026-05-18
+      rate_limit_headers: none documented
+- target: $.paths['/api/v1/transaction'].post
+  update:
+    x-apievangelist-agentic-access:
+      action_class: acting
+      consequence: physical
+      reversible: false
+      note: 'Moves real money and has no published reversal, cancel or refund operation.
+        Treat as irreversible; require explicit human confirmation before invoking with
+        type WITHDRAW.'
+      idempotency: caller-supplied meta.idempotencyKey
+- target: $.paths['/api/v1/transaction/{transactionId}/authorize'].post
+  update:
+    x-apievangelist-agentic-access:
+      action_class: acting
+      consequence: physical
+      reversible: false
+      note: 'Completes a pending money movement. No MCP tool exists for this operation, so an
+        agent that created a CUSTOMER_ACTION_REQUIRED transaction over MCP must fall back to
+        REST to finish it.'
+- target: $.paths['/api/v1/customer/{customerId}'].delete
+  update:
+    x-apievangelist-agentic-access:
+      action_class: acting
+      consequence: write
+      reversible: false
+      note: No restore operation is published for a deleted customer.
+- target: $.paths['/api/v1/org/rates'].get
+  update:
+    x-apievangelist-agentic-access:
+      action_class: connected
+      consequence: read
+      note: 'Safe to call freely; the docs recommend caching rates rather than polling.'

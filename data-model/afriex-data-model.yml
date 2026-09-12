@@ -1,0 +1,272 @@
+generated: '2026-09-12'
+method: derived
+source: openapi/afriex-business-openapi-original.json ($ref graph + id-reference fields), object semantics
+  from https://docs.afriex.com/guides/connecting-the-pieces
+note: 'Derived from the 21 component schemas. The core of the model is a three-entity chain the provider
+  documents explicitly in "Connecting the Pieces": a Customer owns PaymentMethods, and a Transaction moves
+  value between a PaymentMethod and the business wallet on that customer behalf. Wallet balance and FX
+  rates are business-scoped rather than customer-scoped and carry no schema of their own.'
+core_chain: Customer -> PaymentMethod -> Transaction
+entities:
+- entity: BankCodeResolverResponse
+  fields: 1
+  field_names:
+  - bankName
+- entity: Customer
+  fields: 9
+  field_names:
+  - customerId
+  - reference
+  - name
+  - email
+  - phone
+  - countryCode
+  - meta
+  - createdAt
+  - updatedAt
+- entity: Transaction
+  fields: 17
+  field_names:
+  - transactionId
+  - customerId
+  - sourceId
+  - destinationId
+  - sourceAmount
+  - sourceCurrency
+  - destinationAmount
+  - destinationCurrency
+  - type
+  - channel
+  - status
+  - merchantReference
+  - rate
+  - fee
+- entity: TransactionMeta
+  fields: 5
+  field_names:
+  - narration
+  - invoice
+  - idempotencyKey
+  - reference
+  - settlement
+- entity: PaymentMethodBankAddress
+  fields: 6
+  field_names:
+  - line1
+  - line2
+  - city
+  - state
+  - zip
+  - country
+- entity: PaymentMethod
+  fields: 23
+  field_names:
+  - paymentMethodId
+  - customerId
+  - reference
+  - institution
+  - transaction
+  - recipient
+  - channel
+  - countryCode
+  - currency
+  - capabilities
+  - accountName
+  - accountNumber
+  - routingNumber
+  - bankAddress
+- entity: PaymentMethodInstitution
+  fields: 6
+  field_names:
+  - institutionId
+  - institutionName
+  - institutionCode
+  - institutionAddress
+  - correspondentBankName
+  - correspondentBankAccountNumber
+- entity: PaymentMethodRecipient
+  fields: 4
+  field_names:
+  - recipientEmail
+  - recipientPhone
+  - recipientAddress
+  - recipientName
+- entity: PaymentMethodTransaction
+  fields: 2
+  field_names:
+  - transactionInvoice
+  - transactionNarration
+- entity: ErrorDetails
+  fields: 3
+  field_names:
+  - errorMessage
+  - friendlyMessage
+  - data
+- entity: ErrorResponse
+  fields: 3
+  field_names:
+  - code
+  - error
+  - details
+- entity: CheckoutSessionCustomer
+  fields: 4
+  field_names:
+  - name
+  - email
+  - phone
+  - countryCode
+- entity: CreateCheckoutSessionResponse
+  fields: 2
+  field_names:
+  - checkoutUrl
+  - channels
+- entity: PaymentMethodResolveResponse
+  fields: 3
+  field_names:
+  - recipientName
+  - institutionName
+  - institutionCode
+- entity: PoolAccountPaymentProofSenderDetails
+  fields: 4
+  field_names:
+  - name
+  - accountNumber
+  - bankName
+  - countryCode
+- entity: PoolAccountPaymentProofRequest
+  fields: 7
+  field_names:
+  - amount
+  - customerId
+  - countryCode
+  - reference
+  - fileKey
+  - timestamp
+  - senderDetails
+- entity: MediaURLRequest
+  fields: 2
+  field_names:
+  - fileName
+  - type
+- entity: MediaURLResponse
+  fields: 1
+  field_names:
+  - data
+entity_count: 18
+relationships:
+- from: Transaction
+  to: Customer
+  type: belongs_to
+  via: customerId
+  basis: id-reference field
+- from: Transaction
+  to: PaymentMethod
+  type: belongs_to
+  via: sourceId
+  basis: id-reference field
+- from: Transaction
+  to: PaymentMethod
+  type: belongs_to
+  via: destinationId
+  basis: id-reference field
+- from: PaymentMethod
+  to: customerId
+  type: has_one
+  via: customerId
+  basis: schema $ref
+- from: PaymentMethod
+  to: PaymentMethodInstitution
+  type: has_one
+  via: institution
+  basis: schema $ref
+- from: PaymentMethod
+  to: PaymentMethodTransaction
+  type: has_one
+  via: transaction
+  basis: schema $ref
+- from: PaymentMethod
+  to: PaymentMethodRecipient
+  type: has_one
+  via: recipient
+  basis: schema $ref
+- from: PaymentMethod
+  to: PaymentMethodBankAddress
+  type: has_one
+  via: bankAddress
+  basis: schema $ref
+- from: PaymentMethod
+  to: Customer
+  type: belongs_to
+  via: customerId
+  basis: id-reference field
+- from: ErrorResponse
+  to: ErrorDetails
+  type: has_one
+  via: details
+  basis: schema $ref
+- from: PoolAccountPaymentProofRequest
+  to: PoolAccountPaymentProofSenderDetails
+  type: has_one
+  via: senderDetails
+  basis: schema $ref
+- from: PoolAccountPaymentProofRequest
+  to: Customer
+  type: belongs_to
+  via: customerId
+  basis: id-reference field
+identifiers:
+- entity: Customer
+  field: customerId
+  note: Returned on create; required on all customer-scoped operations and on transactions.
+- entity: Customer
+  field: reference
+  note: Per-customer reference used as the pool-account reference when submitting a deposit payment proof.
+- entity: PaymentMethod
+  field: paymentMethodId
+  note: Used as sourceId on a DEPOSIT and destinationId on a WITHDRAW.
+- entity: Transaction
+  field: transactionId
+  note: Used for status polling, OTP authorization, settlement advice, and carried on webhook payloads.
+- entity: Transaction
+  field: meta.reference
+  note: Caller-supplied correlation reference, echoed on the transaction and its webhooks; also the sandbox
+    outcome-control field.
+enumerations:
+  transaction_type:
+  - WITHDRAW
+  - DEPOSIT
+  - SWAP
+  transaction_status:
+  - PENDING
+  - PROCESSING
+  - SUCCESS
+  - FAILED
+  - CUSTOMER_ACTION_REQUIRED
+  - IN_REVIEW
+  - CHECKER_APPROVAL_REQUIRED
+  payment_channel:
+  - BANK_ACCOUNT
+  - MOBILE_MONEY
+  - SWIFT
+  - UPI
+  - INTERAC
+  - WE_CHAT
+  - CRYPTO
+  - VIRTUAL_BANK_ACCOUNT
+  - POOL_ACCOUNT
+  payment_method_type:
+  - WITHDRAW
+  - DEPOSIT
+  webhook_event:
+  - CUSTOMER.CREATED
+  - CUSTOMER.UPDATED
+  - CUSTOMER.DELETED
+  - PAYMENT_METHOD.CREATED
+  - PAYMENT_METHOD.UPDATED
+  - PAYMENT_METHOD.DELETED
+  - TRANSACTION.CREATED
+  - TRANSACTION.UPDATED
+  - CHECKOUT_SESSION.CREATED
+  - POOL_DEPOSIT_REQUEST.REJECTED
+enumeration_source: openapi contract and https://docs.afriex.com/.well-known/agent-skills/afriex/skill.md
+subway: null

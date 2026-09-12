@@ -1,0 +1,295 @@
+generated: '2026-09-12'
+method: derived
+source: openapi/afriex-business-openapi-original.json (4xx/5xx responses) enriched from https://docs.afriex.com/development
+format: vendor-json
+rfc9457: false
+note: 'Afriex does not use RFC 9457 application/problem+json. Every error on every operation is application/json
+  against a single ErrorResponse schema: {code, error, details{errorMessage, friendlyMessage, data}}.
+  The envelope is consistent across all 32 operations, which is the property that matters for an agent
+  even though the media type is not the standard one. Branch on code; show details.friendlyMessage to
+  a user. For transaction failures specifically the provider Agent Skill directs callers to branch on
+  meta.failureReason.code (AFX_* codes), which are stable, rather than on the message text.'
+envelope:
+  fields:
+  - code
+  - error
+  - details.errorMessage
+  - details.friendlyMessage
+  - details.data
+  schema: '#/components/schemas/ErrorResponse'
+  media_type: application/json
+problems:
+- status: 400
+  occurrences: 26
+  content_type: application/json
+  schema: '#/components/schemas/ErrorResponse'
+  common_descriptions:
+  - Invalid request.
+  - Invalid request parameters.
+  - Invalid customer ID format.
+  - Malformed customer ID in the path.
+  operations:
+  - authorizeTransaction
+  - createCheckoutSession
+  - createCustomer
+  - createPaymentMethod
+  - createTransaction
+  - createVirtualAccount
+  - deleteCustomer
+  - deletePaymentMethod
+  - generatePresignedURL
+  - getBalance
+  - getCryptoWallet
+  - getCustomer
+  - getPaymentMethod
+  - getPoolAccount
+  - getTransaction
+  - listInstitutions
+  - listVirtualAccounts
+  - resolveInstitutionCode
+  - resolveRecipient
+  - smeRegistration
+  - submitPoolAccountPaymentProof
+  - topupBalance
+  - triggerWebhook
+  - updateCustomer
+  - updateCustomerKyc
+  - verifyCustomer
+- status: 401
+  occurrences: 31
+  content_type: application/json
+  schema: '#/components/schemas/ErrorResponse'
+  common_descriptions:
+  - Unauthorized.
+  - Unauthorized - Invalid business API key.
+  - Unauthorized - Invalid or missing business API key.
+  operations:
+  - authorizeTransaction
+  - createCheckoutSession
+  - createPaymentMethod
+  - createTransaction
+  - createVirtualAccount
+  - deleteCustomer
+  - deletePaymentMethod
+  - generatePresignedURL
+  - getBalance
+  - getCryptoWallet
+  - getCustomer
+  - getPaymentMethod
+  - getPoolAccount
+  - getRates
+  - getTransaction
+  - getTransactionAdvice
+  - listCustomers
+  - listInstitutions
+  - listPaymentMethods
+  - listTransactions
+  - listVirtualAccounts
+  - resolveInstitutionCode
+  - resolveRecipient
+  - smeRegistration
+  - smeRegistrationStatus
+  - submitPoolAccountPaymentProof
+  - topupBalance
+  - triggerWebhook
+  - updateCustomer
+  - updateCustomerKyc
+  - verifyCustomer
+- status: 403
+  occurrences: 4
+  content_type: application/json
+  schema: '#/components/schemas/ErrorResponse'
+  common_descriptions:
+  - Forbidden - This endpoint is not available in the production environment.
+  - 'The requested currency is not available to the resolved account
+
+    holder, or the business is still pending compliance review for
+
+    virtual account issuance.'
+  operations:
+  - createCheckoutSession
+  - createVirtualAccount
+  - topupBalance
+  - triggerWebhook
+- status: 404
+  occurrences: 14
+  content_type: application/json
+  schema: '#/components/schemas/ErrorResponse'
+  common_descriptions:
+  - Customer not found.
+  - Payment method not found.
+  - Transaction not found.
+  - Not found.
+  operations:
+  - authorizeTransaction
+  - createTransaction
+  - deleteCustomer
+  - deletePaymentMethod
+  - getBalance
+  - getCustomer
+  - getPaymentMethod
+  - getTransaction
+  - getTransactionAdvice
+  - resolveRecipient
+  - topupBalance
+  - updateCustomer
+  - updateCustomerKyc
+  - verifyCustomer
+- status: 409
+  occurrences: 3
+  content_type: application/json
+  schema: '#/components/schemas/ErrorResponse'
+  common_descriptions:
+  - A customer with this email or phone already exists for the business. `details.data.customerId` carries
+    the existing customer's id so you can adopt it without a follow-up lookup.
+  - The new email or phone already belongs to another customer of this business.
+  - Duplicate submission within the idempotency window.
+  operations:
+  - createCustomer
+  - submitPoolAccountPaymentProof
+  - updateCustomer
+- status: 422
+  occurrences: 7
+  content_type: application/json
+  schema: '#/components/schemas/ErrorResponse'
+  common_descriptions:
+  - Request failed schema validation. `details.friendlyMessage` carries the specific field error.
+  - None of the requested `channels` are supported for the `currency`, or the currency has no deposit
+    channel available at all.
+  operations:
+  - createCheckoutSession
+  - listCustomers
+  - listPaymentMethods
+  - listTransactions
+  - smeRegistration
+  - updateCustomer
+  - verifyCustomer
+- status: 429
+  occurrences: 1
+  content_type: application/json
+  schema: '#/components/schemas/ErrorResponse'
+  common_descriptions:
+  - Too many verification requests.
+  operations:
+  - verifyCustomer
+- status: 500
+  occurrences: 29
+  content_type: application/json
+  schema: '#/components/schemas/ErrorResponse'
+  common_descriptions:
+  - Server error.
+  - Internal server error.
+  operations:
+  - authorizeTransaction
+  - createCheckoutSession
+  - createCustomer
+  - createPaymentMethod
+  - createTransaction
+  - createVirtualAccount
+  - deleteCustomer
+  - deletePaymentMethod
+  - getBalance
+  - getCryptoWallet
+  - getCustomer
+  - getPaymentMethod
+  - getPoolAccount
+  - getRates
+  - getTransaction
+  - getTransactionAdvice
+  - listCustomers
+  - listInstitutions
+  - listPaymentMethods
+  - listTransactions
+  - listVirtualAccounts
+  - resolveInstitutionCode
+  - resolveRecipient
+  - submitPoolAccountPaymentProof
+  - topupBalance
+  - triggerWebhook
+  - updateCustomer
+  - updateCustomerKyc
+  - verifyCustomer
+- status: 503
+  occurrences: 29
+  content_type: application/json
+  schema: '#/components/schemas/ErrorResponse'
+  common_descriptions:
+  - 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting.
+    Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504;
+    if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+  operations:
+  - authorizeTransaction
+  - createCheckoutSession
+  - createCustomer
+  - createPaymentMethod
+  - createTransaction
+  - createVirtualAccount
+  - deleteCustomer
+  - deletePaymentMethod
+  - getBalance
+  - getCryptoWallet
+  - getCustomer
+  - getPaymentMethod
+  - getPoolAccount
+  - getRates
+  - getTransaction
+  - getTransactionAdvice
+  - listCustomers
+  - listInstitutions
+  - listPaymentMethods
+  - listTransactions
+  - listVirtualAccounts
+  - resolveInstitutionCode
+  - resolveRecipient
+  - submitPoolAccountPaymentProof
+  - topupBalance
+  - triggerWebhook
+  - updateCustomer
+  - updateCustomerKyc
+  - verifyCustomer
+named_codes:
+- code: EMAIL_ALREADY_EXISTS
+  status: 409
+  operation: createCustomer
+  meaning: A customer with this email already exists.
+  remediation: details.data.customerId carries the existing customer id — adopt it rather than retrying
+    the create.
+- code: PHONE_NUMBER_ALREADY_EXISTS
+  status: 409
+  operation: createCustomer
+  meaning: A customer with this phone number already exists.
+  remediation: details.data.customerId carries the existing customer id — adopt it rather than retrying
+    the create.
+- code: INVALID_BUSINESS_CUSTOMER_REQUEST
+  status: 400
+  operation: createCustomer
+  meaning: Customer payload failed validation; details.errorMessage names the specific failure (e.g. PHONE_COUNTRY_MISMATCH).
+  remediation: Correct the named field. Phone numbers must be E.164 and match countryCode.
+  source: https://docs.afriex.com/development
+- code: VIRTUAL_ACCOUNT_LIMIT_REACHED
+  status: 422
+  operation: createVirtualAccount
+  meaning: The per-(business, customer, currency) virtual-account limit would be exceeded.
+  remediation: Reuse an existing virtual account from listVirtualAccounts.
+- code: VIRTUAL_ACCOUNT_PENDING_COMPLIANCE_REVIEW
+  status: 422
+  operation: createVirtualAccount
+  meaning: Issuance for this business/currency requires a compliance-approved application; the first request
+    starts that review.
+  remediation: Retry once the review is approved.
+- code: NOT_FOUND_ERROR
+  status: 404
+  operation: '*'
+  meaning: Unrouted path on the API host.
+  remediation: Check the path; observed live on api.afriex.com for unknown routes.
+  source: probed 2026-09-12
+failure_reason_codes:
+  field: meta.failureReason.code
+  prefix: AFX_
+  note: Transaction-level failure reasons are returned on the transaction object rather than as HTTP errors,
+    under meta.failureReason.code with an AFX_ prefix. The provider Agent Skill names the field and the
+    prefix and instructs callers to branch on the code, but no enumerated registry of AFX_* values is
+    published in the contract or the docs, so the full list is not recorded here. Asking Afriex to publish
+    that registry is the single highest-value error-semantics improvement available to them.
+  enumerated: false
+http_status_reference: https://docs.afriex.com/development

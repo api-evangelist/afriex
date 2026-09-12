@@ -1,0 +1,142 @@
+generated: '2026-09-12'
+method: probed
+source: live GET of the named /.well-known/ path list on every host this record knows
+note: 'Seven hosts probed across the fifteen named paths. Exactly one document was served:
+  an A2A agent card at https://docs.afriex.com/.well-known/agent-card.json (200,
+  application/json, 982 bytes) — saved to a2a/afriex-agent-card.json and indexed here.
+  Every other path 404s on every host. afriex.com and www.afriex.com answer /.well-known/*
+  with a 404 HTML stub reading "Invalid .well-known request"; api.afriex.com and
+  sandbox.api.afriex.com answer a 404 JSON NOT_FOUND_ERROR; business.afriex.com and
+  mcp.afriex.com 404 as well. A per-host negative-control path that cannot exist was probed
+  on every host and returned 404 everywhere, so no host is path-echoing and the single
+  agent-card hit is genuine.'
+path_echo_control: passed
+hit_count: 1
+hosts:
+- host: https://afriex.com
+  negative_control: {path: /.well-known/afriex-negative-control-7f3ab91c.json, status: 404}
+  documents:
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 404}
+  - {path: /.well-known/agent.json, status: 404}
+- host: https://www.afriex.com
+  negative_control: {path: /.well-known/afriex-negative-control-7f3ab91c.json, status: 404}
+  documents:
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 404}
+  - {path: /.well-known/agent.json, status: 404}
+- host: https://api.afriex.com
+  negative_control: {path: /.well-known/afriex-negative-control-7f3ab91c.json, status: 404}
+  documents:
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 404}
+  - {path: /.well-known/agent.json, status: 404}
+- host: https://sandbox.api.afriex.com
+  negative_control: {path: /.well-known/afriex-negative-control-7f3ab91c.json, status: 404}
+  documents:
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 404}
+  - {path: /.well-known/agent.json, status: 404}
+- host: https://docs.afriex.com
+  negative_control: {path: /.well-known/afriex-negative-control-7f3ab91c.json, status: 404}
+  documents:
+  - path: /.well-known/agent-card.json
+    status: 200
+    file: ../a2a/afriex-agent-card.json
+    content_type: application/json
+    bytes: 982
+    note: 'A2A agent card — the only served document on any Afriex host. Graded in
+      a2a/afriex-a2a.yml.'
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent.json, status: 404}
+- host: https://mcp.afriex.com
+  negative_control: {path: /.well-known/afriex-negative-control-7f3ab91c.json, status: 404}
+  documents:
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 404}
+  - {path: /.well-known/agent.json, status: 404}
+  note: 'The MCP server serves no OAuth discovery documents; it authenticates per session
+    with an x-afriex-api-key header or the authenticate tool, not OAuth.'
+- host: https://business.afriex.com
+  negative_control: {path: /.well-known/afriex-negative-control-7f3ab91c.json, status: 404}
+  documents:
+  - {path: /.well-known/security.txt, status: 404}
+  - {path: /.well-known/openid-configuration, status: 404}
+  - {path: /.well-known/oauth-authorization-server, status: 404}
+  - {path: /.well-known/oauth-protected-resource, status: 404}
+  - {path: /.well-known/api-catalog, status: 404}
+  - {path: /.well-known/ai-plugin.json, status: 404}
+  - {path: /.well-known/ucp.json, status: 404}
+  - {path: /.well-known/acp.json, status: 404}
+  - {path: /.well-known/aauth-resource.json, status: 404}
+  - {path: /.well-known/apis.json, status: 404}
+  - {path: /apis.json, status: 404}
+  - {path: /apis.yml, status: 404}
+  - {path: /.well-known/agent-card.json, status: 404}
+  - {path: /.well-known/agent.json, status: 404}

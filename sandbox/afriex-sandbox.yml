@@ -1,0 +1,82 @@
+generated: '2026-09-12'
+method: searched
+source: https://docs.afriex.com/development
+note: 'Afriex publishes a genuinely well-specified sandbox: a separate host, separate keys,
+  and — unusually — deterministic outcome control driven by a field the caller already
+  sends. Every value below is quoted from the provider docs; none is invented.'
+environments:
+- name: staging
+  base_url: https://sandbox.api.afriex.com
+  purpose: Testing and development
+  keys: Test-mode API keys, provisioned separately in the dashboard
+- name: production
+  base_url: https://api.afriex.com
+  purpose: Live transactions
+  keys: Live-mode API keys
+separation:
+  mechanism: separate-host-and-key
+  key_prefix: null
+  key_prefix_note: 'Afriex does not use a visible test/live key prefix (no sk_test_ style
+    marker). Mode is carried by which host you call and which dashboard mode minted the key,
+    so a key pasted into the wrong environment is not self-identifying. The docs warn
+    explicitly: "Never use production API keys in your testing environment."'
+  dashboard_toggle: Settings -> API Keys, toggle Test mode for staging and Live for production
+outcome_simulation:
+  mechanism: 'Magic substrings in the transaction meta.reference field (case-insensitive).
+    For a hosted checkout session the same control is the merchantReference supplied at
+    session creation.'
+  applies_to: sandbox/staging only; production ignores these values
+  triggers:
+  - value: fail
+    effect: Transaction settles as FAILED. For withdrawals the amount is returned to your wallet.
+  - value: SIMULATE_INSTANT
+    effect: Transaction settles in about 30 seconds instead of the default window.
+  - value: SIMULATE_INSTANT_FAIL
+    effect: Combined trigger — a fast FAILED outcome.
+  - value: SIMULATE_OTP
+    effect: Deposit returns CUSTOMER_ACTION_REQUIRED, meaning an OTP is needed.
+  - value: SIMULATE_NO_OTP
+    effect: Deposit completes without an OTP step.
+  default_behaviour: 'With no trigger present, a sandbox transaction settles as SUCCESS on
+    the default timeline of roughly 5-6 minutes, and the matching TRANSACTION.UPDATED
+    webhook fires on settlement.'
+test_values:
+- kind: otp
+  value: '123456'
+  scope: sandbox only
+  note: 'The sandbox OTP for authorizeTransaction. Any other value is rejected, so the
+    wrong-OTP path is testable.'
+  example: 'POST https://sandbox.api.afriex.com/api/v1/transaction/{id}/authorize with {"type":"OTP","otp":"123456"}'
+test_cards: []
+test_cards_note: 'Not applicable — Afriex is not a card acquirer. Its rails are bank
+  transfer, mobile money, SWIFT, UPI, Interac, virtual accounts, pool accounts and crypto,
+  so the sandbox fixture surface is magic references and a magic OTP rather than test PANs.'
+funding:
+  operation: topupBalance
+  http: POST /api/v1/org/balance/topup
+  note: 'Credits the business wallet with a specified amount and currency. Sandbox-only —
+    returns 403 Forbidden in production.'
+webhook_testing:
+  operation: triggerWebhook
+  http: POST /api/v1/webhooks/trigger
+  note: 'Fires a real signed webhook to the configured callback URL using a real entity as
+    the payload, so a handler can be tested without manufacturing the underlying activity.
+    Sandbox/staging only.'
+  source_ip_to_allowlist: 34.234.189.210
+environment_restricted_operations:
+  sandbox_only:
+  - {operation: topupBalance, behaviour: 403 Forbidden in production}
+  - {operation: triggerWebhook, behaviour: sandbox/staging only}
+  - {operation: createCheckoutSession, behaviour: 'documented sandbox/staging only in the MCP tool description'}
+  production_only:
+  - {operation: getCryptoWallet, behaviour: 'only active in production; does not work on staging/dev'}
+  - {operation: listVirtualAccounts, behaviour: production only}
+  - {operation: createVirtualAccount, behaviour: production only}
+  note: 'Restriction runs in both directions, which is worth planning around: the crypto
+    wallet and virtual-account collection flows cannot be exercised in the sandbox at all,
+    so those integrations are first tested against real money.'
+test_clocks:
+  supported: false
+  note: 'No time-simulation or test-clock facility. Time is compressed only through
+    SIMULATE_INSTANT, which shortens settlement to ~30 seconds.'
+docs: https://docs.afriex.com/development

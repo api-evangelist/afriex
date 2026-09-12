@@ -64,5 +64,24 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-Afriex is a company surfaced via the API Evangelist harvest backlog (source: secondary-market) and added to the network as a stub for full-pipeline profiling.
-- https://www.nasdaqprivatemarket.com/
+Afriex is a cross-border payments and remittance company moving money between Africa, North
+America, Europe and Asia. Alongside its consumer remittance app it publishes the **Afriex Business
+API** — a REST API for customer onboarding and KYC, payment methods across bank transfer, mobile
+money, SWIFT, UPI, Interac and USDC/USDT wallets, multi-currency balances and live FX rates,
+deposits, withdrawals and in-wallet swaps, hosted checkout, virtual and pool collection accounts,
+and RSA-signed webhooks.
+
+**Public API surface profiled here**
+
+- **OpenAPI 3.1** contract, 32 operations across 25 paths, with an in-spec `webhooks` block —
+  served at <https://api.afriex.com/api/docs.json> and mirrored at
+  <https://docs.afriex.com/api-reference/openapi.json>
+- **Remote MCP server** at `https://mcp.afriex.com/mcp` — 26 tools, `tools/list` answers
+  anonymously with full input schemas
+- **A2A agent card** at <https://docs.afriex.com/.well-known/agent-card.json>
+- **Provider-published Agent Skill**, linked from that card
+- **llms.txt** at <https://docs.afriex.com/llms.txt>
+- **Official TypeScript SDK** `@afriex/sdk`
+
+Links: <https://www.afriex.com/> · docs <https://docs.afriex.com/> ·
+status <https://afriexinc.statuspage.io> · GitHub <https://github.com/Afri-exchange>

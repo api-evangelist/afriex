@@ -1,0 +1,24 @@
+generated: '2026-09-12'
+method: searched
+source: https://www.afriex.com/
+plan_count: 0
+note: 'Afriex publishes no developer/API pricing page and no plan tiers. www.afriex.com/pricing
+  returns 404 (probed 2026-09-12). The consumer product markets itself on "zero fees" and
+  competitive FX rates for remittances, which is a consumer proposition rather than an API
+  plan, and the Business API documentation contains no pricing, quota or billing section at
+  all — access is obtained by creating a business account at https://business.afriex.com/
+  and provisioning API keys, with commercial terms evidently agreed off-site. Recorded as
+  plan_count: 0 rather than omitted; this is an unpublished-pricing finding, not an absent
+  measurement.'
+plans: []
+pricing_model_observed:
+  consumer_app: 'Marketed as zero transfer fees with revenue taken on the FX spread; no
+    published rate card.'
+  business_api: 'No published pricing. No pricing page, no per-transaction fee schedule, and
+    no FX-spread disclosure in the developer documentation.'
+access_path:
+  signup: https://business.afriex.com/
+  api_keys: Dashboard -> Developer -> API keys
+evidence:
+- {url: 'https://www.afriex.com/pricing', status: 404}
+- {url: 'https://docs.afriex.com/llms.txt', status: 200, note: 'Complete docs index — contains no pricing page.'}

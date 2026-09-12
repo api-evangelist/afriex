@@ -1,0 +1,170 @@
+generated: '2026-09-12'
+method: searched
+source: https://docs.afriex.com/development
+sources:
+- https://docs.afriex.com/development
+- https://docs.afriex.com/api-reference/introduction
+- https://docs.afriex.com/api-reference/endpoint/webhooks/introduction
+- openapi/afriex-business-openapi-original.json
+authentication:
+  style: api-key-header
+  header: x-api-key
+  scoping: 'Per-key permission sets chosen at creation time in the dashboard (Developer ->
+    API keys) and revoked by deleting the key. A key missing the permission an endpoint
+    requires returns 401 — the same response as an unrecognised, malformed or revoked key.
+    The docs state the two cases are deliberately indistinguishable on the wire.'
+  optional_signing:
+    header: x-api-signature
+    note: 'Payload signing is opt-in per business and off by default; enabled by contacting
+      support@afriex.com. The header is optional in the contract.'
+  see: authentication/afriex-authentication.yml
+versioning:
+  scheme: date-header
+  header: x-api-version
+  current: '2026-05-18'
+  default: '2026-05-18'
+  note: '2026-05-18 is the only supported version and is what you get if you omit the
+    header. Any other value is rejected with 400 Bad Request and an "Unsupported API
+    version" message. There is no URI-path version negotiation; /api/v1 is a fixed path
+    prefix, not a version train.'
+  docs: https://docs.afriex.com/api-reference/introduction
+idempotency:
+  supported: true
+  coverage: partial
+  mechanism: request-body-field
+  field: meta.idempotencyKey
+  note: 'Idempotency is a field inside the transaction request body (meta.idempotencyKey),
+    not a transport-level Idempotency-Key header, so it does not generalise across the
+    mutating surface — it exists only where the schema defines a meta object. Four of the
+    fourteen mutating operations have replay protection, and two of those are implicit
+    rather than caller-controlled: getCryptoWallet and submitPoolAccountPaymentProof
+    deduplicate server-side on their own terms, without the caller supplying a key.
+    Customer, payment-method, virtual-account, checkout-session and SME-registration
+    creation carry no idempotency contract at all, so a retried POST there can create a
+    duplicate record. Customer creation is the partial exception: a duplicate email or
+    phone is rejected 409 with the existing customerId returned in
+    details.data.customerId, which is a uniqueness constraint rather than idempotency, but
+    is recoverable in the same way.'
+  scope:
+  - operation: createTransaction
+    mechanism: caller-supplied meta.idempotencyKey
+  - operation: authorizeTransaction
+    mechanism: caller-supplied meta.idempotencyKey
+  - operation: getCryptoWallet
+    mechanism: 'server-side; the docs state it "supports idempotency to prevent duplicate
+      wallet creation" — get-or-create semantics, no caller key'
+  - operation: submitPoolAccountPaymentProof
+    mechanism: 'server-side dedupe window on (business, customer, amount, reference,
+      timestamp, sender details); duplicates within the configured window are rejected'
+  unprotected_writes:
+  - createCustomer
+  - updateCustomer
+  - deleteCustomer
+  - updateCustomerKyc
+  - verifyCustomer
+  - createPaymentMethod
+  - deletePaymentMethod
+  - createVirtualAccount
+  - createCheckoutSession
+  - topupBalance
+  - smeRegistration
+  - triggerWebhook
+  - generatePresignedURL
+  docs: https://docs.afriex.com/development
+reversibility:
+  grade: absent
+  write_surface: true
+  note: 'This is a money-movement API with no reversal surface. The words refund, cancel,
+    void, reverse, rollback, undo and chargeback do not appear anywhere in the 32-operation
+    OpenAPI contract, and no operation exists to stop, recall or reverse a transaction
+    once created. The transaction lifecycle is create -> (authorize) -> terminal status;
+    the only caller-side control after creation is authorizeTransaction, which completes a
+    transaction rather than taking it back. An agent calling createTransaction with
+    type WITHDRAW should treat the call as irreversible through the public API.'
+  reversal_operations: []
+  window: null
+  window_note: 'No reversal window is published because no reversal operation is published.
+    No window has been asserted here; inventing one on a payments API is the error that
+    costs a user real money.'
+  partial_mitigations:
+  - 'Failure returns funds automatically: the docs state that when a withdrawal settles as
+    FAILED, "the amount is returned to your wallet". This is the platform unwinding its own
+    failed transfer, not a caller-invokable reversal.'
+  - 'Pool-account deposits land in IN_REVIEW and require an operator to confirm the bank
+    inflow before funds are credited, so that path has a human checkpoint before value moves.'
+  - 'Some transactions enter CHECKER_APPROVAL_REQUIRED, an internal review state, before
+    settling.'
+  - 'Sandbox settles transactions automatically in 5-6 minutes, so a mistaken test transfer
+    is not recoverable there either — it simply is not real money.'
+  recommendation: 'Callers needing recall semantics must arrange them with Afriex out of
+    band (support@afriex.com); nothing in the public contract exposes them.'
+pagination:
+  style: page-number
+  params:
+  - {name: page, type: integer, default: 0, note: zero-indexed; the first page is 0}
+  - {name: limit, type: integer, default: 10, max: 100}
+  response_fields: [page, total, data]
+  page_count_formula: Math.ceil(total / limit)
+  note: 'Offset/page pagination, not cursor. The response envelope carries page, total and
+    data; there are no next/prev links, so a caller computes its own page count from total.'
+  docs: https://docs.afriex.com/development
+error_envelope:
+  format: vendor-json
+  rfc9457: false
+  content_type: application/json
+  shape:
+    code: Machine-readable error code for programmatic handling.
+    error: Short human-readable error category.
+    details.errorMessage: Specific technical reason for the error.
+    details.friendlyMessage: User-facing message safe to display to end users.
+    details.data: 'Optional caller-safe context — on a customer-create uniqueness conflict
+      it carries the existing customer id.'
+  guidance: 'The docs direct callers to branch on code programmatically and surface
+    details.friendlyMessage to end users. The provider Agent Skill adds that transaction
+    failures should branch on meta.failureReason.code (the AFX_* codes), because codes are
+    stable while messages may change.'
+  see: errors/afriex-problem-types.yml
+rate_limit_signaling:
+  status_on_exhaustion: 429
+  response_headers: []
+  note: 'The contract declares a 429 response and the docs tell callers to implement
+    exponential backoff, cache exchange rates and use webhooks instead of polling, but no
+    numeric limit and no RateLimit-*/X-RateLimit-*/Retry-After response header is
+    documented anywhere. An agent cannot read its remaining budget from a response.'
+  see: rate-limits/afriex-rate-limits.yml
+request_tracing:
+  request_id_header: null
+  note: 'No request-id or correlation-id header is documented. Caller-side correlation is
+    done with meta.reference on a transaction, which is echoed back and also appears on the
+    matching webhook payload.'
+metadata:
+  field: meta
+  note: 'Transactions carry a meta object holding caller-supplied reference and
+    idempotencyKey alongside server-set fields such as failureReason and otpRequired.
+    Customers accept a meta object at creation.'
+field_expansion:
+  supported: false
+  note: No expand / sparse-fieldset parameter is defined on any operation.
+webhooks:
+  signature_header: x-webhook-signature
+  algorithm: RSA-SHA256
+  encoding: base64
+  signed_data: raw request body bytes (not parsed JSON)
+  key_source: Dashboard -> Developers -> Webhooks (staging and production keys differ)
+  ack_budget_seconds: 30
+  retries: 12
+  backoff: 30s -> 1m -> 2m -> 4m -> 8m -> 16m -> 32m -> 1h -> 2h -> 4h -> 8h -> 16h
+  source_ips:
+    sandbox: 34.234.189.210
+    production: 34.197.33.100
+  note: 'Inbound firewall allowlisting of the two Afriex source IPs is a stated prerequisite
+    for receiving deliveries.'
+  see: asyncapi/afriex-business-webhooks.yml
+environments:
+  staging: https://sandbox.api.afriex.com
+  production: https://api.afriex.com
+  note: 'Separate API keys per environment; the docs warn never to use production keys in
+    testing. Several operations are environment-restricted in both directions — topupBalance,
+    triggerWebhook and createCheckoutSession are sandbox-only (403 in production), while
+    getCryptoWallet, listVirtualAccounts and createVirtualAccount are production-only.'
+  see: sandbox/afriex-sandbox.yml

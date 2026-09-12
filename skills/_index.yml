@@ -1,0 +1,43 @@
+generated: '2026-09-12'
+method: searched
+source: https://docs.afriex.com/.well-known/agent-skills/afriex/skill.md
+note: 'Afriex publishes its own Agent Skill and this pipeline saved it verbatim rather than
+  generating one. It was discovered through the skills[] entry on the A2A agent card at
+  https://docs.afriex.com/.well-known/agent-card.json, which points at the skill markdown
+  file. Nothing here was authored by API Evangelist.'
+skills:
+- file: afriex-business-api-skill.md
+  name: Afriex
+  description: 'Use when building payment integrations, managing cross-border transactions,
+    processing customer payouts, handling deposits, or setting up real-time webhook
+    notifications.'
+  api: openapi/afriex-business-openapi-original.json
+  provider_published: true
+  source_url: https://docs.afriex.com/.well-known/agent-skills/afriex/skill.md
+  http_status: 200
+  content_type: text/markdown
+  bytes: 12851
+  fetched: '2026-09-12'
+  frontmatter_name: Afriex
+  frontmatter_version: '1.0'
+  covers:
+  - Authentication, environments and API key permissions
+  - Payment channels, transaction types and transaction statuses
+  - Customer -> payment method -> transaction workflow
+  - Webhook setup, signature verification and IP allowlisting
+  - Sandbox outcome simulation and OTP testing
+  - Common gotchas and a pre-submission verification checklist
+  operations:
+  - createCustomer
+  - updateCustomerKyc
+  - createPaymentMethod
+  - createTransaction
+  - authorizeTransaction
+  - getTransaction
+  - topupBalance
+  operations_note: 'Operation ids listed above were verified present in
+    openapi/afriex-business-openapi-original.json. The skill itself references endpoints by
+    HTTP path rather than operationId, and two of its paths do not match the published
+    contract — it names /api/v1/webhook and POST /api/v1/webhook/trigger, where the contract
+    defines /api/v1/webhooks/trigger (plural). Recorded as found; not corrected, because the
+    file is saved verbatim.'

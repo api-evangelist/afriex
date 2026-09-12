@@ -1,0 +1,20 @@
+generated: '2026-09-12'
+method: derived
+source: openapi/afriex-business-openapi-original.json
+summary:
+  types:
+  - apiKey
+  api_key_in:
+  - header
+schemes:
+- name: ApiKey
+  type: apiKey
+  in: header
+  parameter: x-api-key
+  description: Static business API key issued from the dashboard. A business can provision **multiple
+    API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions,
+    create deposits, etc). Permissions are chosen per key at creation time in the dashboard
+    and may be revoked by deleting the key. Requests made with a key that does not include the
+    permission required by the target endpoint i
+  sources:
+  - openapi/afriex-business-openapi-original.json

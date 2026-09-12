@@ -1,0 +1,64 @@
+# Afriex Business API
+
+- [Afriex Business API](https://docs.afriex.com/index.md): Build seamless payment experiences with the Afriex Business API
+- [Quickstart](https://docs.afriex.com/quickstart.md): Get up and running with the Afriex Business API in minutes
+- [Integration Guide](https://docs.afriex.com/development.md): Best practices for integrating the Afriex Business API
+- [Supported Currencies & Payment Rails](https://docs.afriex.com/guides/supported-currencies.md): Complete list of countries, currencies, and payment channels available through the Afriex Business API
+- [Connecting the Pieces](https://docs.afriex.com/guides/connecting-the-pieces.md): How Customers, Payment Methods, and Transactions link together
+- [Afriex SDK](https://docs.afriex.com/sdk/introduction.md): TypeScript SDK for the Afriex Business API: type-safe, modular, and production-ready
+- [Webhooks](https://docs.afriex.com/sdk/webhooks.md): Verify webhook signatures and handle event notifications with the SDK
+- [MCP Server](https://docs.afriex.com/mcp/introduction.md): Use the Afriex Business API with AI assistants via the Model Context Protocol
+- [Connecting MCP Clients](https://docs.afriex.com/mcp/connecting.md): Connect Claude Desktop, Claude Code, and Cursor to the Afriex MCP server
+- [Introduction](https://docs.afriex.com/api-reference/introduction.md): Welcome to the Afriex Business API
+- [Models](https://docs.afriex.com/api-reference/models.md): Data models, enumerations, and field references for the Afriex Business API
+- [Supported Currencies & Payment Rails](https://docs.afriex.com/api-reference/supported-currencies.md): Complete list of countries, currencies, and payment channels available through the Afriex Business API
+- [Connecting the Pieces](https://docs.afriex.com/api-reference/connecting-the-pieces.md): How Customers, Payment Methods, and Transactions link together
+- [Get Balance](https://docs.afriex.com/api-reference/endpoint/balance/get.md): Returns the business's **Payout (Withdraw) wallet** balances in the provided currencies, as a flat currency-to-amount map. Balances held in other wallets (for example the Collection wallet that `settlement: "request"` withdrawals debit, and that pool-account deposits credit) are not included in this…
+- [Top Up Sandbox Balance](https://docs.afriex.com/api-reference/endpoint/balance/topup.md): Credits the business wallet with the specified amount and currency. **This endpoint is only available in the sandbox/staging environment and will return a `403 Forbidden` response in production.** Use it during integration development to top up your test balance without making real transfers.
+- [Checkout Flow Guide](https://docs.afriex.com/api-reference/endpoint/checkout-sessions/user-flow-guide.md): Step-by-step guide for the hosted Afriex Checkout payment experience
+- [Create Checkout Session](https://docs.afriex.com/api-reference/endpoint/checkout-sessions/create.md): Creates a hosted checkout session for a customer and returns a `checkoutUrl` that the customer should be redirected to in order to complete payment. The session captures the merchant intent (amount, currency, merchant reference, customer details, and allowed payment channels) and is identified end-t…
+- [Get Exchange Rates](https://docs.afriex.com/api-reference/endpoint/rates/get.md): Retrieves real-time exchange rates.
+- [Create Customer](https://docs.afriex.com/api-reference/endpoint/customers/create.md): Creates a new customer for a business, with optional KYC information.
+- [List Customers](https://docs.afriex.com/api-reference/endpoint/customers/list.md): Retrieves a paginated list of customers.
+- [Get Customer](https://docs.afriex.com/api-reference/endpoint/customers/get.md): Retrieves a specific customer by their unique identifier. The response includes the customer's `reference`, which is the value to supply as the pool-account `reference` when submitting a payment proof.
+- [Update Customer](https://docs.afriex.com/api-reference/endpoint/customers/update.md): Partially updates a customer's profile. Send at least one of `fullName`, `email`, or `phone`; omitted fields are left unchanged.
+- [Delete Customer](https://docs.afriex.com/api-reference/endpoint/customers/delete.md): Deletes a specific customer by their unique identifier.
+- [Update Customer KYC](https://docs.afriex.com/api-reference/endpoint/customers/update-kyc.md): Partially updates a customer's KYC information.
+- [Verify Customer](https://docs.afriex.com/api-reference/endpoint/customers/verify.md): Runs an identity verification against a customer document. Today the only supported `docType` is `BVN` (Nigeria); `docValue` is the document number. Verification is rate limited per business.
+- [Create Payment Method](https://docs.afriex.com/api-reference/endpoint/payment-methods/create.md): Creates a new payment method.
+- [List Payment Methods](https://docs.afriex.com/api-reference/endpoint/payment-methods/list.md): Retrieves a paginated list of payment methods.
+- [Get Payment Method](https://docs.afriex.com/api-reference/endpoint/payment-methods/get.md): Retrieves a specific payment method by its unique identifier.
+- [Delete Payment Method](https://docs.afriex.com/api-reference/endpoint/payment-methods/delete.md): Removes a payment method from the system.
+- [List Institutions](https://docs.afriex.com/api-reference/endpoint/payment-methods/institution.md): Retrieves a list of banks or mobile money providers available for a specific country.
+- [Institution Codes](https://docs.afriex.com/api-reference/endpoint/payment-methods/institution-codes.md): Resolves a bank code (SWIFT code or US routing number) to the corresponding bank or institution name.
+- [Resolve Payment Method](https://docs.afriex.com/api-reference/endpoint/payment-methods/resolve.md): Resolves payment method user information for bank accounts or mobile money.
+- [Get or Create Crypto Wallet](https://docs.afriex.com/api-reference/endpoint/payment-methods/crypto-wallet.md): Retrieves an existing crypto wallet or creates a new one for the specified crypto asset. **Important:** This endpoint is **only active in production** and does **not work on staging/dev**. Supports idempotency to prevent duplicate wallet creation. Currently supports USDT and USDC assets. Send a GET…
+- [List Virtual Accounts](https://docs.afriex.com/api-reference/endpoint/payment-methods/virtual-account.md): Returns every active virtual account for the resolved customer-or-owner and currency. Read-only: when no virtual account exists, the response is **200** with `data: []`.
+- [Create Virtual Account](https://docs.afriex.com/api-reference/endpoint/payment-methods/virtual-account-create.md): Creates a new virtual account for the resolved customer-or-owner and currency. Pass `customerId` to mint the VA for a specific end-user; omit it to mint one for the business owner.
+- [Get Pool Account](https://docs.afriex.com/api-reference/endpoint/payment-methods/pool-account.md): Returns the pool account for the supplied `country`. Use the `reference` on the response to reconcile incoming deposits.
+- [Create Transaction](https://docs.afriex.com/api-reference/endpoint/transactions/create.md): Create a new transaction to process a payment for a customer. Use `type: WITHDRAW` to send funds to a destination payment method (requires `destinationId`), `type: DEPOSIT` to pull funds from a source payment method (requires `sourceId`), or `type: SWAP` to convert funds between currencies within th…
+- [Authorize Transaction](https://docs.afriex.com/api-reference/endpoint/transactions/authorize.md): Completes a transaction that was created in a `CUSTOMER_ACTION_REQUIRED` state and needs an extra authorization step (for example, a one-time password on a mobile-money deposit). The body is discriminated by `type`; today the only supported variant is `OTP`.
+- [List Transactions](https://docs.afriex.com/api-reference/endpoint/transactions/list.md): Retrieves a paginated list of transactions.
+- [Get Transaction](https://docs.afriex.com/api-reference/endpoint/transactions/get.md): Retrieves a specific transaction by its unique identifier.
+- [Get Settlement Advice](https://docs.afriex.com/api-reference/endpoint/transactions/advice.md): Returns a short-lived presigned download URL for the settlement & remittance advice PDF auto-generated for a USD withdrawal from your collection wallet (a withdrawal created with `settlement: "request"`). The advice is issued with status `PENDING` when the withdrawal is created and regenerated with…
+- [Submit Pool-Account Payment Proof](https://docs.afriex.com/api-reference/endpoint/transactions/pool-account-proof.md): Submits proof of a deposit made to the business pool account. The request creates a business deposit transaction in `IN_REVIEW` status; an operator confirms the bank inflow before the funds are credited. The response returns that transaction. Duplicate submissions of the same business, customer, amo…
+- [Introduction](https://docs.afriex.com/api-reference/endpoint/webhooks/introduction.md): Webhook overview, security, and verification
+- [Trigger Test Webhook](https://docs.afriex.com/api-reference/endpoint/webhooks/trigger.md): Fires a real signed webhook to the business's configured callback URL using a real entity (customer, payment method, transaction, or checkout session) as the payload. Useful for testing webhook handlers in sandbox without manufacturing the underlying activity. **This endpoint is only available in th…
+- [Customer Events](https://docs.afriex.com/api-reference/endpoint/webhooks/customer-events.md)
+- [Payment Method Events](https://docs.afriex.com/api-reference/endpoint/webhooks/payment-method-events.md)
+- [Transaction Events](https://docs.afriex.com/api-reference/endpoint/webhooks/transaction-events.md)
+- [Checkout Session Events](https://docs.afriex.com/api-reference/endpoint/webhooks/checkout-session-events.md)
+- [Pool Deposit Events](https://docs.afriex.com/api-reference/endpoint/webhooks/pool-deposit-events.md)
+- [Generate Upload URL](https://docs.afriex.com/api-reference/endpoint/media/generate-upload-url.md): Generates a presigned S3 URL that the caller can use to upload a file (e.g. a KYC document) directly to Afriex's secure storage. The returned URL is time-limited and scoped to the requested operation.
+- [Register SME](https://docs.afriex.com/api-reference/endpoint/sme-registration/register.md): Registers a business as its own SME so that dedicated virtual accounts are issued under the business's own legal entity rather than the shared default. The flow is stateful and driven by this single endpoint: the `step` field selects the payload carried in `data`. Call the steps in order — `INITIATE…
+- [Get SME Registration Status](https://docs.afriex.com/api-reference/endpoint/sme-registration/status.md): Returns the most recent SME registration status for the authenticated business. Once the registration has been submitted, the response also includes the latest review outcome. Requires an API key with admin permission.
+
+## OpenAPI Specs
+
+- [openapi](/api-reference/openapi.json)
+
+## Optional
+
+- [Documentation](https://docs.afriex.com/)
+- [Status](https://afriexinc.statuspage.io)
+- [Support](mailto:support@afriex.com)
