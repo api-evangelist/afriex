@@ -48,50 +48,15 @@ maintainers:
 - FN: APIs.json
   email: info@apis.io
 apis:
-- aid: afriex:afriex-business-api
-  name: Afriex Business API
-  description: The Afriex Business API is a REST API for cross-border money movement. It covers customer
-    creation and KYC verification, payment-method registration across bank accounts, mobile money, SWIFT,
-    UPI, Interac and crypto wallets, institution and recipient resolution, DEPOSIT / WITHDRAW / SWAP transactions
-    with OTP authorization, multi-currency wallet balances and live FX rates, hosted checkout sessions,
-    virtual and pool collection accounts, SME registration, presigned media upload for KYC documents,
-    and five families of RSA-SHA256 signed webhook events. Authentication is a per-key, permission-scoped
-    x-api-key header; the contract is OpenAPI 3.1 with 32 operations and in-spec webhooks.
-  humanURL: https://docs.afriex.com/
-  baseURL: https://api.afriex.com
-  tags:
-  - Payments
-  - Remittances
-  - Cross-Border Payments
-  - Foreign Exchange
-  - Mobile Money
-  - Webhook
-  tags_raw:
-  - Payments
-  - Remittances
-  - Cross-Border Payments
-  - Foreign Exchange
-  - Mobile Money
-  - Webhooks
-  properties:
-  - type: OpenAPI
-    url: openapi/afriex-business-openapi-original.json
-  - type: Documentation
-    url: https://docs.afriex.com/
-  - type: APIReference
-    url: https://docs.afriex.com/api-reference/introduction
-  - type: GettingStarted
-    url: https://docs.afriex.com/quickstart
-  - type: Webhooks
-    url: asyncapi/afriex-business-webhooks.yml
 - aid: afriex:afriex-mcp-server
   name: Afriex MCP Server
-  description: Afriex publishes a hosted, remote Model Context Protocol server at https://mcp.afriex.com/mcp
-    that exposes 26 tools covering the Business API surface — customers, transactions, payment methods,
-    institutions, crypto wallets, virtual and pool accounts, checkout sessions, balances, FX rates and
-    test webhook triggers. The server initializes anonymously and answers tools/list without credentials;
-    API calls are authenticated per session either with x-afriex-api-key / x-afriex-environment HTTP headers
-    or by calling the authenticate tool as the first action.
+  description: >-
+    Afriex publishes a hosted, remote Model Context Protocol server at https://mcp.afriex.com/mcp that
+    exposes 26 tools covering the Business API surface — customers, transactions, payment methods, institutions,
+    crypto wallets, virtual and pool accounts, checkout sessions, balances, FX rates and test webhook
+    triggers. The server initializes anonymously and answers tools/list without credentials; API calls
+    are authenticated per session either with x-afriex-api-key / x-afriex-environment HTTP headers or
+    by calling the authenticate tool as the first action.
   humanURL: https://docs.afriex.com/mcp/introduction
   baseURL: https://mcp.afriex.com/mcp
   tags:
@@ -105,6 +70,168 @@ apis:
     url: mcp/afriex-tool-crosswalk.yml
   - type: Documentation
     url: https://docs.afriex.com/mcp/introduction
+- aid: afriex:afriex-balance-api
+  name: Afriex Balance API
+  description: View and top up your business wallet balances.
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - Balance
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-balance-api-openapi.yml
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
+- aid: afriex:afriex-checkout-sessions-api
+  name: Afriex Checkout Sessions API
+  description: Create hosted checkout sessions.
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - Checkout Sessions
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-checkout-sessions-api-openapi.yml
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
+- aid: afriex:afriex-customers-api
+  name: Afriex Customers API
+  description: Create and manage your customers.
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - Customers
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-customers-api-openapi.yml
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
+- aid: afriex:afriex-media-api
+  name: Afriex Media API
+  description: Generate presigned URLs for secure file uploads.
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - Media
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-media-api-openapi.yml
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
+- aid: afriex:afriex-payment-methods-api
+  name: Afriex Payment Methods API
+  description: Register and resolve customer payout and collection methods.
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - Payment Methods
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-payment-methods-api-openapi.yml
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
+- aid: afriex:afriex-rates-api
+  name: Afriex Rates API
+  description: Fetch real-time exchange rates.
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - Rates
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-rates-api-openapi.yml
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
+- aid: afriex:afriex-sme-registration-api
+  name: Afriex SME Registration API
+  description: The SME Registration API from Afriex — 2 operation(s) for sme registration.
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - SME Registration
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-sme-registration-api-openapi.yml
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
+- aid: afriex:afriex-transactions-api
+  name: Afriex Transactions API
+  description: Create and track deposits, withdrawals, and swaps.
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - Transactions
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-transactions-api-openapi.yml
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
+- aid: afriex:afriex-webhooks-api
+  name: Afriex Webhooks API
+  description: Webhook event payloads and sandbox webhook testing.
+  humanURL: https://docs.afriex.com/
+  baseURL: https://api.afriex.com
+  tags:
+  - Webhooks
+  properties:
+  - type: OpenAPI
+    url: openapi/afriex-webhooks-api-openapi.yml
+  - type: Documentation
+    url: https://docs.afriex.com/
+  - type: APIReference
+    url: https://docs.afriex.com/api-reference/introduction
+  - type: GettingStarted
+    url: https://docs.afriex.com/quickstart
+  - type: Webhooks
+    url: asyncapi/afriex-business-webhooks.yml
 common:
 - type: DomainSecurity
   url: security/afriex-domain-security.yml
@@ -120,8 +247,6 @@ common:
   url: https://docs.afriex.com/quickstart
 - type: SignUp
   url: https://business.afriex.com/
-- type: Support
-  url: mailto:support@afriex.com
 - type: Blog
   url: https://dev.to/afriex
 - type: GitHubOrganization
