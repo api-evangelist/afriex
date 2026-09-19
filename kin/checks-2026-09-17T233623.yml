@@ -2,14 +2,15 @@
 kin_checks:
   slug: afriex
   schema_version: 0.22.0
-  scored_at: '2026-09-15'
-  run_ts: 2026-09-15T230249
-  note: Actionable checks only (missed + partial). earned/na are every other check
-    in rubric/scoring-0.22.0.yml; counts below let you verify that.
+  scored_at: '2026-09-17'
+  run_ts: 2026-09-17T233623
+  note: Actionable checks (missed + partial) in `checks`, plus the ids that did not
+    apply in `na`. Everything else in rubric/scoring-0.22.0.yml was earned; counts
+    below let you verify that.
   counts:
     total: 136
-    earned: 53
-    partial: 7
+    earned: 51
+    partial: 9
     missed: 54
     na: 22
   checks:
@@ -21,12 +22,10 @@ kin_checks:
     status: missed
   - id: openapi_3_2
     status: missed
-    detail: 0 of 1 openapi documents pass
+    detail: 0 of 9 openapi documents pass
   - id: openapi_3_0
     status: missed
-    detail: 0 of 1 openapi documents pass
-  - id: servers_resolvable
-    status: missed
+    detail: 0 of 9 openapi documents pass
   - id: inbound_contract_published
     status: missed
   - id: json_schema_present
@@ -70,6 +69,8 @@ kin_checks:
   - id: cli_present
     status: missed
   - id: postman_present
+    status: missed
+  - id: support_channel
     status: missed
   - id: plans_present
     status: missed
@@ -125,7 +126,15 @@ kin_checks:
     status: missed
   - id: examples_present
     status: partial
-    earned: 3.88
+    earned: 3.78
+  - id: components_reuse
+    status: partial
+    earned: 0.67
+    detail: 2 of 9 openapi documents pass
+  - id: webhooks_or_callbacks
+    status: partial
+    earned: 0.22
+    detail: 1 of 9 openapi documents pass
   - id: lifecycle_documented
     status: partial
     earned: 1.52
@@ -148,3 +157,26 @@ kin_checks:
     status: partial
     earned: 3.5
     detail: 'grade: documented'
+  na:
+  - asyncapi_3_x
+  - channels_defined
+  - contract_self_operated
+  - fhir_capability_statement
+  - fhir_resource_coverage
+  - graphql_descriptions
+  - graphql_sdl_present
+  - graphql_type_depth
+  - messages_with_schema
+  - os_code_of_conduct
+  - os_contribution_guide
+  - os_releases
+  - os_security_policy
+  - reg_camara_conformance
+  - reg_certification_signal
+  - reg_consent_model
+  - reg_entitlement_terms
+  - reg_fapi_profile
+  - reg_mandate_verified
+  - reg_smart_configuration
+  - security_schemes
+  - server_bindings

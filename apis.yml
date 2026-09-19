@@ -16,6 +16,10 @@ specificationVersion: '0.20'
 created: '2026-09-12'
 modified: '2026-09-12'
 position: Producing
+x-docs-platform: mintlify
+x-docs-platform-confidence: medium
+x-docs-platform-checked: 2026-09-17
+x-docs-hosting: vercel
 tags:
 - Payments
 - Remittances
@@ -76,6 +80,8 @@ apis:
   humanURL: https://docs.afriex.com/
   baseURL: https://api.afriex.com
   tags:
+  - Balances
+  tags_raw:
   - Balance
   properties:
   - type: OpenAPI
@@ -202,6 +208,8 @@ apis:
   humanURL: https://docs.afriex.com/
   baseURL: https://api.afriex.com
   tags:
+  - Transaction
+  tags_raw:
   - Transactions
   properties:
   - type: OpenAPI
@@ -220,6 +228,8 @@ apis:
   humanURL: https://docs.afriex.com/
   baseURL: https://api.afriex.com
   tags:
+  - Webhook
+  tags_raw:
   - Webhooks
   properties:
   - type: OpenAPI
