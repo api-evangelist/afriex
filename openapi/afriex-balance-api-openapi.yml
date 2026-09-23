@@ -1,0 +1,511 @@
+openapi: 3.2.0
+info:
+  title: Afriex Business Balance API
+  version: 1.0.13
+  description: 'Welcome to the Afriex Business API. This API allows you to manage customers, process payments, handle payouts, and receive real-time notifications via webhooks.
+
+
+    For detailed guidance on authentication, pagination, error handling, and webhooks, please refer to the dedicated guides in the top bar. The guide provides a step-by-step instructions to help you integrate seamlessly.'
+  termsOfService: https://www.afriex.com/terms-and-condition
+  contact:
+    name: Afriex API Support
+    email: support@afriex.com
+    url: https://docs.afriex.com
+  license:
+    name: Proprietary
+    url: https://www.afriex.com/terms-and-condition
+servers:
+- url: https://sandbox.api.afriex.com
+  description: Staging Base URL
+- url: https://api.afriex.com
+  description: Production Base URL
+security:
+- ApiKey: []
+tags:
+- name: Balance
+  description: View and top up your business wallet balances.
+paths:
+  /api/v1/org/balance:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: getBalance
+      summary: Fetch wallet balance
+      description: 'Returns the business''s **Payout (Withdraw) wallet** balances in the provided currencies, as a flat currency-to-amount map. Balances held in other wallets (for example the Collection wallet that `settlement: "request"` withdrawals debit, and that pool-account deposits credit) are not included in this response and have no endpoint of their own yet.'
+      tags:
+      - Balance
+      parameters:
+      - name: currencies
+        in: query
+        description: Comma-separated list of currencies to fetch balances for. If omitted, balances for all supported currencies are returned.
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Returns a map with currencies as keys and balances as values.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: number
+                      format: double
+                      description: The balance of the currency.
+                examples:
+                - data:
+                    USD: 100.5
+                    EUR: 250.75
+                    GBP: 300
+              examples:
+                success:
+                  summary: Balance retrieved
+                  value:
+                    data:
+                      USD: 990.00532
+                      NGN: 39623.02258
+                      GBP: 0
+        '400':
+          description: Invalid request parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingCurrencies:
+                  summary: Missing currencies parameter
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Payment method not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Business wallet not found
+                  value:
+                    code: BUSINESS_NOT_FOUND
+                    error: Business not found
+                    details:
+                      errorMessage: Business not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const balances = await afriex.balance.getBalance({\n  currencies: [\"USD\", \"NGN\", \"GBP\"],\n});\n\n// Returns: { USD: 10000, NGN: 5000000, GBP: 8000 }\n"
+  /api/v1/org/balance/topup:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: topupBalance
+      summary: Top up sandbox balance
+      description: Credits the business wallet with the specified amount and currency. **This endpoint is only available in the sandbox/staging environment and will return a `403 Forbidden` response in production.** Use it during integration development to top up your test balance without making real transfers.
+      tags:
+      - Balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - amount
+              - currency
+              properties:
+                amount:
+                  type: number
+                  format: double
+                  description: A positive number representing the amount to credit.
+                  examples:
+                  - 500
+                currency:
+                  type: string
+                  description: Uppercase 3-letter ISO 4217 currency code (e.g. USD, NGN, GBP). Must be a supported Afriex currency.
+                  examples:
+                  - USD
+            examples:
+              topupUSD:
+                summary: Top up USD balance
+                value:
+                  amount: 500
+                  currency: USD
+              topupNGN:
+                summary: Top up NGN balance
+                value:
+                  amount: 250000
+                  currency: NGN
+              topupGBP:
+                summary: Top up GBP balance
+                value:
+                  amount: 200
+                  currency: GBP
+      responses:
+        '200':
+          description: Balance successfully topped up. Returns the created transaction record.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+              examples:
+                success:
+                  summary: Balance topped up
+                  value:
+                    data:
+                      status: SUCCESS
+                      type: DEPOSIT
+                      sourceAmount: '100'
+                      sourceCurrency: USD
+                      destinationAmount: '100'
+                      destinationCurrency: USD
+                      destinationId: ''
+                      customerId: ''
+                      transactionId: 69d6005dab82306f11b03360
+                      meta: {}
+                      createdAt: '2026-04-08T07:14:37.568Z'
+                      updatedAt: '2026-04-08T07:14:37.568Z'
+        '400':
+          description: Invalid request body (e.g. missing fields, negative amount, unsupported currency).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingCurrency:
+                  summary: Missing currency field
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''currency'' is required'
+                    details: {}
+                unsupportedCurrency:
+                  summary: Unsupported currency code
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''currency'' must be one of [NGN, USD, GBP, EUR, ...]'
+                    details: {}
+                negativeAmount:
+                  summary: Negative or zero amount
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''amount'' must be a positive number'
+                    details: {}
+        '401':
+          description: Unauthorized - Invalid or missing business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '403':
+          description: Forbidden - This endpoint is not available in the production environment.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                    - Not allowed
+              examples:
+                productionForbidden:
+                  summary: Endpoint disabled in production
+                  value:
+                    message: Not allowed
+        '404':
+          description: Business not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Business not found
+                  value:
+                    code: BUSINESS_NOT_FOUND
+                    error: Business not found
+                    details:
+                      errorMessage: Business not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const transaction = await afriex.balance.topUpSandbox({\n  amount: 500,\n  currency: \"USD\",\n});\n\nconsole.log(transaction.transactionId);\nconsole.log(transaction.status); // 'SUCCESS'\n"
+components:
+  schemas:
+    Transaction:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          description: The unique identifier for the transaction.
+        customerId:
+          type: string
+          description: The unique identifier of the customer.
+        sourceId:
+          type: string
+          description: The unique identifier of the source payment method.
+        destinationId:
+          type: string
+          description: The unique identifier of the destination payment method.
+        sourceAmount:
+          type: string
+          description: The souce transaction amount value
+        sourceCurrency:
+          type: string
+          description: The currency code of the wallet charged.
+        destinationAmount:
+          type: string
+          description: The destination transaction amount value
+        destinationCurrency:
+          type: string
+          description: The description currency code.
+        type:
+          type: string
+          enum:
+          - DEPOSIT
+          - WITHDRAW
+          - SWAP
+          description: The type of transaction.
+        channel:
+          type: string
+          enum:
+          - BANK_ACCOUNT
+          - SWIFT
+          - MOBILE_MONEY
+          - UPI
+          - INTERAC
+          - WE_CHAT
+          - CARD
+          - CRYPTO
+          - VIRTUAL_BANK_ACCOUNT
+          - POOL_ACCOUNT
+          - ACH_BANK_ACCOUNT
+          - PAYBILL_TILL
+          - RFP
+          - VIRTUAL_CARD
+          - ALIPAY
+          - WALLET
+          description: The payment channel of the transaction.
+        status:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - SUCCESS
+          - FAILED
+          - CANCELLED
+          - REFUNDED
+          - RETRY
+          - UNKNOWN
+          - SCHEDULED
+          - CUSTOMER_ACTION_REQUIRED
+          - REJECTED
+          - IN_REVIEW
+          - CHECKER_APPROVAL_REQUIRED
+          - ENGINEERING_REVIEW_REQUIRED
+          - RFI_REQUESTED
+          - DISPUTED
+          - DISPUTE_RESOLVED
+          - DISPUTE_WON
+          - DISPUTE_LOST
+          - DISPUTE_EVIDENCE_SUBMITTED
+          description: 'The current status of the transaction.
+
+
+            `CHECKER_APPROVAL_REQUIRED`, `ENGINEERING_REVIEW_REQUIRED` and `RFI_REQUESTED` are review states: the transaction is still in flight and is waiting on an internal check, not on you. Treat them as non-terminal and keep polling or listening for `TRANSACTION.UPDATED`. `RFI_REQUESTED` may result in someone contacting you for more information about the transfer.'
+        merchantReference:
+          type: string
+          description: The merchant-supplied reference for the transaction (mirrors meta.reference from the create request).
+        rate:
+          type: string
+          description: The realized source-to-destination exchange rate for the transaction, expressed as `1 sourceCurrency = rate destinationCurrency` (equal to destinationAmount / sourceAmount).
+        fee:
+          type: string
+          description: The fee charged for this transaction, denominated in `sourceCurrency`. It is reported separately from `sourceAmount`. Omitted when no fee applied to the transaction.
+        meta:
+          type: object
+          description: Transaction metadata. Echoes the metadata you attached on create and may include server-set state flags such as `otpRequired` and `failureReason`.
+          properties:
+            narration:
+              type: string
+              description: The narration you attached when creating the transaction, echoed back. An empty string when none was provided.
+            otpRequired:
+              type: boolean
+              description: Returned on deposits that may need an extra authorization step. When `true`, the deposit is waiting for the customer to submit a one-time password; call `POST /transaction/{transactionId}/authorize` to complete it.
+            failureReason:
+              type: object
+              description: Present only when `status` is `FAILED` or `REJECTED`. Carries a stable `AFX_*` code and a customer-safe message. Branch on `code` rather than the underlying rail so your integration stays stable across routing changes.
+              required:
+              - code
+              - message
+              - retryable
+              properties:
+                code:
+                  type: string
+                  description: Stable `AFX_*` failure code. Safe to switch on; the set grows over time but existing values do not change meaning.
+                  example: AFX_VELOCITY_LIMIT_EXCEEDED
+                  enum:
+                  - AFX_REQUEST_FAILED
+                  - AFX_SYSTEM_ERROR
+                  - AFX_SERVICE_UNAVAILABLE
+                  - AFX_INVALID_CURRENCY
+                  - AFX_INVALID_AMOUNT
+                  - AFX_INVALID_RECIPIENT
+                  - AFX_RECIPIENT_NOT_FOUND
+                  - AFX_ACCOUNT_CLOSED
+                  - AFX_NAME_MISMATCH
+                  - AFX_BENEFICIARY_RESTRICTED
+                  - AFX_INVALID_SENDER
+                  - AFX_INVALID_REQUEST
+                  - AFX_VELOCITY_LIMIT_EXCEEDED
+                  - AFX_AMOUNT_LIMIT_EXCEEDED
+                  - AFX_PAYMENT_FAILED
+                  - AFX_COMPLIANCE_REJECTED
+                  - AFX_PROPOSAL_EXPIRED
+                message:
+                  type: string
+                  description: Customer-safe short description of the failure. Suitable for display; do not parse — branch on `code` instead.
+                retryable:
+                  type: boolean
+                  description: '`true` when re-submitting the same request (or, for `AFX_PROPOSAL_EXPIRED`, starting a fresh proposal) may succeed. `false` when the caller must change the request before retrying.'
+          additionalProperties: true
+        createdAt:
+          type: string
+          description: The date and time the transaction was created.
+        updatedAt:
+          type: string
+          description: The date and time the transaction was last updated.
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Static business API key issued from the dashboard. A business can provision **multiple API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions, create deposits, etc). Permissions are chosen per key at creation time in the dashboard and may be revoked by deleting the key. Requests made with a key that does not include the permission required by the target endpoint is rejected with a `401 Unauthorized` response, the same response an unrecognised, malformed or revoked key returns. The API does not distinguish the two cases on the wire. Manage your keys and their permissions under **Developer → API keys** in the dashboard.

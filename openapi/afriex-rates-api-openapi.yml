@@ -1,0 +1,204 @@
+openapi: 3.2.0
+info:
+  title: Afriex Business Rates API
+  version: 1.0.13
+  description: 'Welcome to the Afriex Business API. This API allows you to manage customers, process payments, handle payouts, and receive real-time notifications via webhooks.
+
+
+    For detailed guidance on authentication, pagination, error handling, and webhooks, please refer to the dedicated guides in the top bar. The guide provides a step-by-step instructions to help you integrate seamlessly.'
+  termsOfService: https://www.afriex.com/terms-and-condition
+  contact:
+    name: Afriex API Support
+    email: support@afriex.com
+    url: https://docs.afriex.com
+  license:
+    name: Proprietary
+    url: https://www.afriex.com/terms-and-condition
+servers:
+- url: https://sandbox.api.afriex.com
+  description: Staging Base URL
+- url: https://api.afriex.com
+  description: Production Base URL
+security:
+- ApiKey: []
+tags:
+- name: Rates
+  description: Fetch real-time exchange rates.
+paths:
+  /api/v1/org/rates:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: getRates
+      summary: Get exchange rates
+      description: Retrieves real-time exchange rates.
+      tags:
+      - Rates
+      parameters:
+      - name: fromSymbols
+        in: query
+        description: Comma-separated list of base currency symbols to filter rates by (e.g., USD,NGN,EUR). If omitted, defaults to USD only.
+        required: false
+        schema:
+          type: string
+          examples:
+          - USD,NGN,EUR
+      - name: toSymbols
+        in: query
+        description: Comma-separated list of target currency symbols to filter rates by (e.g., NGN,EUR,GBP). If omitted, all target currencies are returned.
+        required: false
+        schema:
+          type: string
+          examples:
+          - NGN,EUR,GBP
+      responses:
+        '200':
+          description: Successful retrieval of rates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      rates:
+                        type: object
+                        description: Map of base currencies to their exchange rates
+                        additionalProperties:
+                          type: object
+                          additionalProperties:
+                            type: string
+                            examples:
+                            - '1.30272'
+                        examples:
+                        - USD:
+                            USD: '1'
+                            GBP: '0.69255'
+                            EUR: '0.80832'
+                            CAD: '1.30272'
+                            NGN: '1410.1041'
+                            KES: '125.0912'
+                      updatedAt:
+                        type: integer
+                        format: int64
+                        description: Unix timestamp of the last update
+                        examples:
+                        - 1773245407620
+              examples:
+                allRates:
+                  summary: All USD rates
+                  value:
+                    data:
+                      rates:
+                        USD:
+                          USD: '1'
+                          EUR: '0.80832'
+                          GBP: '0.69255'
+                          CAD: '1.30272'
+                          NGN: '1410.1041'
+                          KES: '125.0912'
+                          GHS: '10.96338'
+                          UGX: '3485.0742'
+                      updatedAt: 1775632339823
+                filteredRates:
+                  summary: Filtered, USD to NGN and GBP
+                  value:
+                    data:
+                      rates:
+                        USD:
+                          NGN: '1410.1041'
+                          GBP: '0.69255'
+                      updatedAt: 1775632523393
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const response = await afriex.rates.getRates({\n  fromSymbols: \"USD,NGN\",\n  toSymbols: \"NGN,USD,GBP,KES\",\n});\n\nconsole.log(response.rates);\nconsole.log(response.updatedAt); // Unix timestamp\n"
+components:
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Static business API key issued from the dashboard. A business can provision **multiple API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions, create deposits, etc). Permissions are chosen per key at creation time in the dashboard and may be revoked by deleting the key. Requests made with a key that does not include the permission required by the target endpoint is rejected with a `401 Unauthorized` response, the same response an unrecognised, malformed or revoked key returns. The API does not distinguish the two cases on the wire. Manage your keys and their permissions under **Developer → API keys** in the dashboard.

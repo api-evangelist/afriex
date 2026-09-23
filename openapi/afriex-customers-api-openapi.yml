@@ -1,0 +1,1182 @@
+openapi: 3.2.0
+info:
+  title: Afriex Business Customers API
+  version: 1.0.13
+  description: 'Welcome to the Afriex Business API. This API allows you to manage customers, process payments, handle payouts, and receive real-time notifications via webhooks.
+
+
+    For detailed guidance on authentication, pagination, error handling, and webhooks, please refer to the dedicated guides in the top bar. The guide provides a step-by-step instructions to help you integrate seamlessly.'
+  termsOfService: https://www.afriex.com/terms-and-condition
+  contact:
+    name: Afriex API Support
+    email: support@afriex.com
+    url: https://docs.afriex.com
+  license:
+    name: Proprietary
+    url: https://www.afriex.com/terms-and-condition
+servers:
+- url: https://sandbox.api.afriex.com
+  description: Staging Base URL
+- url: https://api.afriex.com
+  description: Production Base URL
+security:
+- ApiKey: []
+tags:
+- name: Customers
+  description: Create and manage your customers.
+paths:
+  /api/v1/customer:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: createCustomer
+      summary: Create a new customer
+      description: Creates a new customer for a business, with optional KYC information.
+      tags:
+      - Customers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - fullName
+              - email
+              - phone
+              - countryCode
+              properties:
+                fullName:
+                  type: string
+                  description: The full name of the customer.
+                  examples:
+                  - John Doe
+                email:
+                  type: string
+                  format: email
+                  description: The email address of the customer.
+                  examples:
+                  - john.doe@example.com
+                phone:
+                  type: string
+                  description: The phone number of the customer.
+                  examples:
+                  - '+2348192837465'
+                countryCode:
+                  type: string
+                  description: The ISO 3166-1 alpha-2 country code of the customer (e.g., 'NG', 'US').
+                  examples:
+                  - NG
+                meta:
+                  type: object
+                  description: Optional meta data you can attach to the customer.
+            examples:
+              basicCustomer:
+                summary: Minimal, name, email, phone, country
+                value:
+                  fullName: Jane Smith
+                  email: jane.smith@example.com
+                  phone: '+2348192837465'
+                  countryCode: NG
+              customerWithMeta:
+                summary: With custom meta data
+                value:
+                  fullName: Jane Smith
+                  email: jane.smith@example.com
+                  phone: '+2348192837465'
+                  countryCode: NG
+                  meta:
+                    externalId: usr_abc123
+                    tier: premium
+      responses:
+        '201':
+          description: Customer created successfully. Returns the newly created customer object.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+              examples:
+                success:
+                  summary: Customer created
+                  value:
+                    data:
+                      name: Jane Smith
+                      email: jane.smith@example.com
+                      phone: '+2348192837465'
+                      customerId: 69d5ffe1ab82306f11b032f3
+                      reference: afx121011
+                      countryCode: NG
+                      createdAt: '2026-04-08T07:12:33.519Z'
+                      updatedAt: '2026-04-08T07:12:33.519Z'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingPhone:
+                  summary: Missing required field (phone)
+                  value:
+                    code: INVALID_BUSINESS_CUSTOMER_REQUEST
+                    error: Invalid business customer request
+                    details:
+                      errorMessage: Invalid business customer request
+                      friendlyMessage: No customer phone provided
+                invalidEmail:
+                  summary: Invalid email format
+                  value:
+                    code: INVALID_BUSINESS_CUSTOMER_REQUEST
+                    error: Invalid business customer request
+                    details:
+                      errorMessage: Invalid business customer request
+                      friendlyMessage: 'Invalid customer email provided: INVALID_EMAIL'
+        '409':
+          description: A customer with this email or phone already exists for the business. `details.data.customerId` carries the existing customer's id so you can adopt it without a follow-up lookup.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emailExists:
+                  summary: Email already in use
+                  value:
+                    code: EMAIL_ALREADY_EXISTS
+                    error: Email already exists
+                    details:
+                      errorMessage: Email already exists
+                      friendlyMessage: ''
+                      data:
+                        customerId: 69d5fff7ab82306f11b0330e
+                phoneExists:
+                  summary: Phone already in use
+                  value:
+                    code: PHONE_NUMBER_ALREADY_EXISTS
+                    error: Phone number already exists
+                    details:
+                      errorMessage: Phone number already exists
+                      friendlyMessage: ''
+                      data:
+                        customerId: 69d5fff7ab82306f11b0330e
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const customer = await afriex.customers.create({\n  fullName: \"John Doe\",\n  email: \"john@example.com\",\n  phone: \"+1234567890\",\n  countryCode: \"US\",\n});\n"
+    get:
+      operationId: listCustomers
+      summary: Get customer list
+      description: Retrieves a paginated list of customers.
+      tags:
+      - Customers
+      parameters:
+      - name: page
+        in: query
+        description: Page number for pagination (starting from 0)
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        description: Number of items per page
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      - name: email
+        in: query
+        description: Filter by customer email address (exact match, case-insensitive).
+        required: false
+        schema:
+          type: string
+          format: email
+          examples:
+          - john.doe@example.com
+      - name: phone
+        in: query
+        description: Filter by customer phone number in E.164 format.
+        required: false
+        schema:
+          type: string
+          examples:
+          - '+2348192837465'
+      responses:
+        '200':
+          description: List of customers retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Customer'
+                  page:
+                    type: integer
+                    description: Current page number
+                  total:
+                    type: integer
+                    description: Total number of customers matching the query
+              examples:
+                success:
+                  summary: Customer list retrieved
+                  value:
+                    data:
+                    - name: Addams Oshay
+                      email: addams@example.com
+                      phone: '+15086340138'
+                      customerId: 6929843e2c4653277440acc0
+                      reference: afx121011
+                      countryCode: US
+                      createdAt: '2025-11-28T11:15:10.812Z'
+                      updatedAt: '2025-11-28T11:15:10.812Z'
+                    - name: Daniel Obirije
+                      email: daniel@example.com
+                      phone: '+2347049861191'
+                      customerId: 6930610b0d8aab4a00b3f918
+                      reference: afx121011
+                      countryCode: NG
+                      createdAt: '2025-12-03T16:10:51.291Z'
+                      updatedAt: '2025-12-03T16:10:51.291Z'
+                    total: 1448
+                    page: 0
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '422':
+          description: Request failed schema validation. `details.friendlyMessage` carries the specific field error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: Validation error
+                    details:
+                      errorMessage: Validation error
+                      friendlyMessage: '''page'' must be a number'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const response = await afriex.customers.list({\n  page: 0,\n  limit: 20,\n  email: \"john@example.com\",\n});\n\nconsole.log(response.data);  // Customer[]\nconsole.log(response.total); // Total count\n"
+  /api/v1/customer/{customerId}:
+    parameters:
+    - $ref: '#/components/parameters/x-api-signature'
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: getCustomer
+      summary: Get customer by ID
+      description: Retrieves a specific customer by their unique identifier. The response includes the customer's `reference`, which is the value to supply as the pool-account `reference` when submitting a payment proof.
+      tags:
+      - Customers
+      parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Customer retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+              examples:
+                success:
+                  summary: Customer retrieved
+                  value:
+                    data:
+                      name: Jane Smith
+                      email: jane.smith@example.com
+                      phone: '+2348192837465'
+                      customerId: 69d5ffe1ab82306f11b032f3
+                      reference: afx121011
+                      countryCode: NG
+                      createdAt: '2026-04-08T07:12:33.519Z'
+                      updatedAt: '2026-04-08T07:12:33.519Z'
+        '400':
+          description: Invalid customer ID format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''customerId'' must be a string'
+                    details: {}
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Customer not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Customer not found
+                  value:
+                    code: BUSINESS_CUSTOMER_NOT_FOUND
+                    error: Business customer not found
+                    details:
+                      errorMessage: Business customer not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: 'const customer = await afriex.customers.get("customer-id");
+
+          '
+    patch:
+      operationId: updateCustomer
+      summary: Update customer profile
+      description: Partially updates a customer's profile. Send at least one of `fullName`, `email`, or `phone`; omitted fields are left unchanged.
+      tags:
+      - Customers
+      parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Partial profile update. At least one of fullName, email, or phone must be present.
+              properties:
+                fullName:
+                  type: string
+                  description: The full name of the customer.
+                email:
+                  type: string
+                  format: email
+                  description: The email of the customer.
+                phone:
+                  type: string
+                  description: The phone number of the customer in E.164 format.
+              minProperties: 1
+              additionalProperties: false
+            examples:
+              name:
+                summary: Update name only
+                value:
+                  fullName: Jane Doe
+              contact:
+                summary: Update email and phone
+                value:
+                  email: jane.doe@example.com
+                  phone: '+2348192837465'
+      responses:
+        '200':
+          description: Customer updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+              examples:
+                success:
+                  summary: Profile updated
+                  value:
+                    data:
+                      name: Jane Doe
+                      email: jane.doe@example.com
+                      phone: '+2348192837465'
+                      customerId: 69d5ffe1ab82306f11b032f3
+                      reference: afx121011
+                      countryCode: NG
+                      createdAt: '2026-04-08T07:12:33.519Z'
+                      updatedAt: '2026-04-08T07:20:11.004Z'
+        '400':
+          description: Malformed customer ID in the path.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCustomerId:
+                  summary: Malformed customer ID
+                  value:
+                    code: INVALID_BUSINESS_CUSTOMER_ID
+                    error: Invalid business customer id
+                    details:
+                      errorMessage: Invalid business customer id
+                      friendlyMessage: ''
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Customer not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Customer not found
+                  value:
+                    code: BUSINESS_CUSTOMER_NOT_FOUND
+                    error: Business customer not found
+                    details:
+                      errorMessage: Business customer not found
+                      friendlyMessage: ''
+        '409':
+          description: The new email or phone already belongs to another customer of this business.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emailExists:
+                  summary: Email already in use
+                  value:
+                    code: EMAIL_ALREADY_EXISTS
+                    error: Email already exists
+                    details:
+                      errorMessage: Email already exists
+                      friendlyMessage: ''
+        '422':
+          description: Request failed schema validation. `details.friendlyMessage` carries the specific field error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: Validation error
+                    details:
+                      errorMessage: Validation error
+                      friendlyMessage: value must contain at least one of [fullName, email, phone]
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const customer = await afriex.customers.update(\"customer-id\", {\n  fullName: \"Jane Doe\",\n});\n"
+    delete:
+      operationId: deleteCustomer
+      summary: Delete customer by ID
+      description: Deletes a specific customer by their unique identifier.
+      tags:
+      - Customers
+      parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Customer deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type:
+                    - object
+                    - 'null'
+                    description: Omitted on success. The response body is an empty object.
+              examples:
+                deleted:
+                  summary: Customer deleted
+                  value: {}
+        '400':
+          description: Invalid customer ID format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''customerId'' must be a string'
+                    details: {}
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Customer not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Customer not found
+                  value:
+                    code: BUSINESS_CUSTOMER_NOT_FOUND
+                    error: Business customer not found
+                    details:
+                      errorMessage: Business customer not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: 'await afriex.customers.delete("customer-id");
+
+          '
+  /api/v1/customer/{customerId}/kyc:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    patch:
+      operationId: updateCustomerKyc
+      summary: Update customer KYC information
+      description: Partially updates a customer's KYC information.
+      tags:
+      - Customers
+      parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 'A flat map of KYC document types to their values. Send the document map directly as the request body (do not wrap it in a `kyc` field). Each key must be one of the allowed KYC document types and each value is a string.
+
+
+                `PHONE` and `COUNTRY` are not accepted here; they are profile fields owned by `PATCH /api/v1/customer/{customerId}`. `BVN` is not accepted either; it is owned by `POST /api/v1/customer/{customerId}/verify`, which writes it only after a successful bank verification. Sending any of the three returns `400 INVALID_KYC_DOCUMENT_TYPE`.'
+              additionalProperties:
+                type: string
+              propertyNames:
+                enum:
+                - REPRESENTATIVE_TYPE
+                - DATE_OF_BIRTH
+                - ADDRESS
+                - BANK_STATEMENT
+                - BUSINESS_CERTIFICATE
+                - ID_FRONT
+                - ID_BACK
+                - SELFIE
+                - PROOF_OF_ADDRESS
+                - PROOF_OF_INCOME
+                - DRIVER_LICENSE
+                - PASSPORT
+                - NATIONAL_ID
+                - PAYMENT_METHOD
+                - RESIDENCE_PERMIT
+                - VEHICLE_REGISTRATION
+                - VOTER_ID
+                - OTHERS
+              examples:
+              - PASSPORT: passport.png
+                DATE_OF_BIRTH: '2000-01-01'
+            examples:
+              passport:
+                summary: Passport number and date of birth (Ghana)
+                value:
+                  PASSPORT: A12345678
+                  DATE_OF_BIRTH: '1990-05-15'
+              nationalId:
+                summary: National ID (Ghana)
+                value:
+                  NATIONAL_ID: GHA-123456789-0
+                  DATE_OF_BIRTH: '1990-05-15'
+              driverLicense:
+                summary: Driver's license (Kenya)
+                value:
+                  DRIVER_LICENSE: DL-987654
+                  DATE_OF_BIRTH: '1990-05-15'
+              documentUpload:
+                summary: Uploaded identity documents
+                value:
+                  ID_FRONT: id-front.png
+                  ID_BACK: id-back.png
+                  SELFIE: selfie.png
+      responses:
+        '200':
+          description: Customer updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+              examples:
+                success:
+                  summary: KYC updated
+                  value:
+                    data:
+                      name: Test User KYC
+                      email: test.kyc.user@example.com
+                      phone: '+2348192837001'
+                      customerId: 69d5fff7ab82306f11b0330e
+                      reference: afx121011
+                      countryCode: NG
+                      meta:
+                        kyc:
+                          data:
+                            PASSPORT: A12345678
+                            DATE_OF_BIRTH: '1990-05-15'
+                      createdAt: '2026-04-08T07:12:55.888Z'
+                      updatedAt: '2026-04-08T07:17:18.638Z'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidKycType:
+                  summary: Invalid KYC document type key
+                  value:
+                    code: INVALID_KYC_DOCUMENT_TYPE
+                    error: Invalid kyc document type
+                    details:
+                      errorMessage: Invalid kyc document type
+                      friendlyMessage: Invalid KYC document type provided
+                invalidBvn:
+                  summary: Invalid BVN value
+                  value:
+                    code: INVALID_KYC_DOCUMENT_TYPE
+                    error: Invalid kyc document type
+                    details:
+                      errorMessage: Invalid kyc document type
+                      friendlyMessage: Invalid BVN provided
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Customer not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Customer not found
+                  value:
+                    code: BUSINESS_CUSTOMER_NOT_FOUND
+                    error: Business customer not found
+                    details:
+                      errorMessage: Business customer not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const customer = await afriex.customers.updateKyc(\"customer-id\", {\n  kyc: {\n    documentType: \"passport\",\n    documentNumber: \"AB123456\",\n  },\n});\n"
+  /api/v1/customer/{customerId}/verify:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: verifyCustomer
+      summary: Verify a customer document
+      description: Runs an identity verification against a customer document. Today the only supported `docType` is `BVN` (Nigeria); `docValue` is the document number. Verification is rate limited per business.
+      tags:
+      - Customers
+      parameters:
+      - name: customerId
+        in: path
+        description: The unique identifier of the customer
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                docType:
+                  type: string
+                  description: The type of document to verify.
+                  enum:
+                  - BVN
+                docValue:
+                  type: string
+                  minLength: 1
+                  description: The document number to verify.
+              required:
+              - docType
+              - docValue
+            examples:
+              bvn:
+                summary: Verify a Nigerian BVN
+                value:
+                  docType: BVN
+                  docValue: '22222222222'
+      responses:
+        '200':
+          description: Customer verified successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+              examples:
+                success:
+                  summary: Customer verified
+                  value:
+                    data:
+                      name: Jane Smith
+                      email: jane.smith@example.com
+                      phone: '+2348192837465'
+                      customerId: 69d5ffe1ab82306f11b032f3
+                      reference: afx121011
+                      countryCode: NG
+                      createdAt: '2026-04-08T07:12:33.519Z'
+                      updatedAt: '2026-04-08T07:21:09.872Z'
+        '400':
+          description: Malformed customer ID in the path.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCustomerId:
+                  summary: Malformed customer ID
+                  value:
+                    code: INVALID_BUSINESS_CUSTOMER_ID
+                    error: Invalid business customer id
+                    details:
+                      errorMessage: Invalid business customer id
+                      friendlyMessage: ''
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Customer not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Customer not found
+                  value:
+                    code: BUSINESS_CUSTOMER_NOT_FOUND
+                    error: Business customer not found
+                    details:
+                      errorMessage: Business customer not found
+                      friendlyMessage: ''
+        '422':
+          description: Request failed schema validation. `details.friendlyMessage` carries the specific field error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: Validation error
+                    details:
+                      errorMessage: Validation error
+                      friendlyMessage: '''docValue'' is required'
+        '429':
+          description: Too many verification requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rateLimited:
+                  summary: Rate limit exceeded
+                  value:
+                    code: RATE_LIMIT_ERROR
+                    error: You can't make this request at the moment. Please try again later
+                    details: {}
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const customer = await afriex.customers.verify(\"customer-id\", {\n  docType: \"BVN\",\n  docValue: \"22222222222\",\n});\n"
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    Customer:
+      type: object
+      properties:
+        customerId:
+          type: string
+          description: The unique identifier for the customer.
+        reference:
+          type: string
+          description: A shortened reference for the customer. Returned on customer reads (list and by-ID) and used as the pool-account reference when submitting a payment proof. Falls back to the customer id when no shortened reference has been assigned.
+        name:
+          type: string
+          description: The full name of the customer.
+        email:
+          type: string
+          format: email
+          description: The email of the customer.
+        phone:
+          type: string
+          description: The phone number of the customer in E.164 format.
+        countryCode:
+          type: string
+          description: The country code of the customer in ISO 3166-1 alpha-2 format.
+        meta:
+          type: object
+          description: optional meta data you can attach to the customer.
+        createdAt:
+          type: string
+          description: The date and time the customer was created.
+        updatedAt:
+          type: string
+          description: The date and time the customer was last updated.
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
+    x-api-signature:
+      name: x-api-signature
+      in: header
+      required: false
+      description: Signature of the request payload, used for request authentication where payload signing is enabled for your business.
+      schema:
+        type: string
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Static business API key issued from the dashboard. A business can provision **multiple API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions, create deposits, etc). Permissions are chosen per key at creation time in the dashboard and may be revoked by deleting the key. Requests made with a key that does not include the permission required by the target endpoint is rejected with a `401 Unauthorized` response, the same response an unrecognised, malformed or revoked key returns. The API does not distinguish the two cases on the wire. Manage your keys and their permissions under **Developer → API keys** in the dashboard.

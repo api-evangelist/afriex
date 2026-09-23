@@ -1,0 +1,982 @@
+openapi: 3.2.0
+info:
+  title: Afriex Business Webhooks API
+  version: 1.0.13
+  description: 'Welcome to the Afriex Business API. This API allows you to manage customers, process payments, handle payouts, and receive real-time notifications via webhooks.
+
+
+    For detailed guidance on authentication, pagination, error handling, and webhooks, please refer to the dedicated guides in the top bar. The guide provides a step-by-step instructions to help you integrate seamlessly.'
+  termsOfService: https://www.afriex.com/terms-and-condition
+  contact:
+    name: Afriex API Support
+    email: support@afriex.com
+    url: https://docs.afriex.com
+  license:
+    name: Proprietary
+    url: https://www.afriex.com/terms-and-condition
+servers:
+- url: https://sandbox.api.afriex.com
+  description: Staging Base URL
+- url: https://api.afriex.com
+  description: Production Base URL
+security:
+- ApiKey: []
+tags:
+- name: Webhooks
+  description: Webhook event payloads and sandbox webhook testing.
+paths:
+  /api/v1/webhooks/trigger:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: triggerWebhook
+      summary: Trigger a test webhook (sandbox-only)
+      description: Fires a real signed webhook to the business's configured callback URL using a real entity (customer, payment method, transaction, or checkout session) as the payload. Useful for testing webhook handlers in sandbox without manufacturing the underlying activity. **This endpoint is only available in the sandbox/staging environment and will return a `403 Forbidden` response in production.**
+      tags:
+      - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - event
+              - entityId
+              properties:
+                event:
+                  allOf:
+                  - $ref: '#/components/schemas/WebhookEventName'
+                  description: The event to fire. `POOL_DEPOSIT_REQUEST.REJECTED` is delivered by the pool-account flow but cannot be fired from this test endpoint.
+                entityId:
+                  type: string
+                  description: The identifier of the entity to send in the webhook payload. Must be a UUID v4 when `event` is `CHECKOUT_SESSION.CREATED`; otherwise must be the 24-character hexadecimal id of the relevant customer, payment method, or transaction (the id returned when it was created).
+                  examples:
+                  - 69528240ba52c13b669fb239
+            examples:
+              transactionEvent:
+                summary: Trigger a transaction webhook
+                value:
+                  event: TRANSACTION.UPDATED
+                  entityId: 6952826eba52c13b669fb263
+              checkoutSessionEvent:
+                summary: Trigger a checkout session webhook (UUID entityId)
+                value:
+                  event: CHECKOUT_SESSION.CREATED
+                  entityId: f47ac10b-58cc-4372-a567-0e02b2c3d479
+      responses:
+        '200':
+          description: Webhook triggered successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: Details of the queued webhook delivery.
+                    properties:
+                      queued:
+                        type: boolean
+                        description: Always true; the webhook delivery was queued.
+                      event:
+                        $ref: '#/components/schemas/WebhookEventName'
+                      entityId:
+                        type: string
+                        description: The id of the entity used as the webhook payload.
+                      deliveryUrl:
+                        type: string
+                        description: The business webhook callback URL the event was queued to.
+              examples:
+                queued:
+                  summary: Webhook queued
+                  value:
+                    data:
+                      queued: true
+                      event: TRANSACTION.UPDATED
+                      entityId: 6952826eba52c13b669fb263
+                      deliveryUrl: https://merchant.example.com/webhooks
+        '400':
+          description: Invalid request body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - This endpoint is not available in the production environment.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                    - Not allowed
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const result = await afriex.webhooks.triggerTestWebhook({\n  event: \"TRANSACTION.UPDATED\",\n  resourceId: \"transaction-id\",\n});\n\nconsole.log(result); // { success: true, message: \"...\" }\n"
+webhooks:
+  customer.events:
+    post:
+      operationId: customerWebhookEvent
+      summary: Customer Events
+      description: 'Afriex delivers real-time notifications to your configured webhook URL whenever a customer is **created**, **updated**, or **deleted**.
+
+
+        The payload structure is **identical** across all events. Only the `event` field changes.
+
+
+        **Security**: Every request includes an `x-webhook-signature` header. You **must** verify this signature using Afriex''s public key before processing. See the Webhooks Overview & Security section for verification instructions.'
+      tags:
+      - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  enum:
+                  - CUSTOMER.CREATED
+                  - CUSTOMER.UPDATED
+                  - CUSTOMER.DELETED
+                  description: Identifies which customer event occurred
+                  examples:
+                  - CUSTOMER.UPDATED
+                data:
+                  type: object
+                  description: The customer data relevant to this event
+                  properties:
+                    customerId:
+                      type: string
+                      description: Unique identifier of the customer
+                      examples:
+                      - 69516dd0464b2213bd74cfad
+                    name:
+                      type: string
+                      examples:
+                      - John Doe
+                    email:
+                      type: string
+                      format: email
+                      examples:
+                      - john.doe@example.com
+                    phone:
+                      type: string
+                      examples:
+                      - '+2348121123445'
+                      description: Phone number in E.164 international format
+                    countryCode:
+                      type: string
+                      description: ISO 3166-1 alpha-2 country code
+                      examples:
+                      - NG
+                    meta:
+                      type: object
+                      description: Optional metadata attached to the customer.
+                      additionalProperties: true
+                    createdAt:
+                      type: string
+                      description: The date and time the customer was created.
+                    updatedAt:
+                      type: string
+                      description: The date and time the customer was last updated.
+                  required:
+                  - customerId
+                  - name
+                  - email
+                  - phone
+                  - countryCode
+                  additionalProperties: false
+              required:
+              - event
+              - data
+              additionalProperties: false
+            examples:
+              customerCreated:
+                summary: Customer Created
+                value:
+                  event: CUSTOMER.CREATED
+                  data:
+                    customerId: 69516dd0464b2213bd74cfad
+                    name: John Doe
+                    email: john.doe@example.com
+                    phone: '+2348121123445'
+                    countryCode: NG
+              customerUpdated:
+                summary: Customer Updated
+                value:
+                  event: CUSTOMER.UPDATED
+                  data:
+                    customerId: 69516dd0464b2213bd74cfad
+                    name: John Doe
+                    email: john.doe@example.com
+                    phone: '+2348121123445'
+                    countryCode: NG
+              customerDeleted:
+                summary: Customer Deleted
+                value:
+                  event: CUSTOMER.DELETED
+                  data:
+                    customerId: 69516dd0464b2213bd74cfad
+                    name: John Doe
+                    email: john.doe@example.com
+                    phone: '+2348121123445'
+                    countryCode: NG
+      responses:
+        '200':
+          description: Acknowledge receipt. Return any 2xx status code quickly. Response body is ignored.
+        '400':
+          description: Bad Request, malformed payload, invalid/missing signature, etc. Afriex will retry delivery.
+        '401':
+          description: Unauthorized, signature verification failed.
+  payment_method.events:
+    post:
+      operationId: paymentMethodWebhookEvent
+      summary: Payment Method Events
+      description: 'Afriex delivers real-time notifications to your configured webhook URL whenever a payment method is **created**, **updated**, or **deleted** for a customer.
+
+
+        The payload structure is **identical** across all events. Only the `event` field changes.
+
+
+        **Security**: Every request includes an `x-webhook-signature` header. You **must** verify this signature using Afriex''s public key before processing. See the Webhooks Overview & Security section for verification instructions.'
+      tags:
+      - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  enum:
+                  - PAYMENT_METHOD.CREATED
+                  - PAYMENT_METHOD.UPDATED
+                  - PAYMENT_METHOD.DELETED
+                  description: Identifies which payment method event occurred
+                  examples:
+                  - PAYMENT_METHOD.UPDATED
+                data:
+                  type: object
+                  description: The payment method data relevant to this event. Empty fields are omitted. CARD-channel payment methods omit accountName/accountNumber/institution and instead include card fields (last4, brand, expiration, cardName); dynamic virtual accounts may additionally include expiresInMinutes, amount, and extra.
+                  properties:
+                    paymentMethodId:
+                      type: string
+                      description: Unique identifier of the payment method
+                      examples:
+                      - 69528259ba52c13b669fb241
+                    channel:
+                      type: string
+                      description: Type/channel of the payment method
+                      examples:
+                      - BANK_ACCOUNT
+                    customerId:
+                      type: string
+                      description: ID of the customer this payment method belongs to
+                      examples:
+                      - 69528240ba52c13b669fb239
+                    institution:
+                      type: object
+                      properties:
+                        institutionId:
+                          type: string
+                          examples:
+                          - ''
+                        institutionName:
+                          type: string
+                          examples:
+                          - United Bank for Africa
+                        institutionCode:
+                          type: string
+                          examples:
+                          - ''
+                        institutionAddress:
+                          type: string
+                          examples:
+                          - ''
+                      description: Bank or financial institution details (may be partial)
+                    transaction:
+                      type: object
+                      properties:
+                        transactionInvoice:
+                          type: string
+                          examples:
+                          - ''
+                        transactionNarration:
+                          type: string
+                          examples:
+                          - ''
+                      description: Transaction-related metadata (often empty for bank accounts)
+                    recipient:
+                      type: object
+                      properties:
+                        recipientEmail:
+                          type: string
+                          examples:
+                          - ''
+                        recipientPhone:
+                          type: string
+                          examples:
+                          - ''
+                        recipientAddress:
+                          type: string
+                          examples:
+                          - ''
+                        recipientName:
+                          type: string
+                          examples:
+                          - ''
+                      description: Recipient details (often empty for bank accounts)
+                    accountName:
+                      type: string
+                      description: Name on the account
+                      examples:
+                      - Sabasil
+                    accountNumber:
+                      type: string
+                      description: Account number or masked identifier
+                      examples:
+                      - '2133213321'
+                    countryCode:
+                      type: string
+                      description: ISO 3166-1 alpha-2 country code
+                      examples:
+                      - NG
+                    status:
+                      type: string
+                      description: Lifecycle status of the payment method.
+                      examples:
+                      - active
+                    meta:
+                      type: object
+                      description: Additional flexible metadata (empty object if unused)
+                      additionalProperties: true
+                  required:
+                  - paymentMethodId
+                  - channel
+                  - customerId
+                  - countryCode
+                  additionalProperties: true
+              required:
+              - event
+              - data
+              additionalProperties: false
+            examples:
+              paymentMethodCreated:
+                summary: Payment Method Created
+                value:
+                  event: PAYMENT_METHOD.CREATED
+                  data:
+                    paymentMethodId: 69528259ba52c13b669fb241
+                    channel: BANK_ACCOUNT
+                    customerId: 69528240ba52c13b669fb239
+                    institution:
+                      institutionId: ''
+                      institutionName: United Bank for Africa
+                      institutionCode: ''
+                      institutionAddress: ''
+                    transaction:
+                      transactionInvoice: ''
+                      transactionNarration: ''
+                    recipient:
+                      recipientEmail: ''
+                      recipientPhone: ''
+                      recipientAddress: ''
+                      recipientName: ''
+                    accountName: Sabasil
+                    accountNumber: '2133213321'
+                    countryCode: NG
+                    meta: {}
+              paymentMethodUpdated:
+                summary: Payment Method Updated
+                value:
+                  event: PAYMENT_METHOD.UPDATED
+                  data:
+                    paymentMethodId: 69528259ba52c13b669fb241
+                    channel: BANK_ACCOUNT
+                    customerId: 69528240ba52c13b669fb239
+                    institution:
+                      institutionId: ''
+                      institutionName: United Bank for Africa
+                      institutionCode: ''
+                      institutionAddress: ''
+                    transaction:
+                      transactionInvoice: ''
+                      transactionNarration: ''
+                    recipient:
+                      recipientEmail: ''
+                      recipientPhone: ''
+                      recipientAddress: ''
+                      recipientName: ''
+                    accountName: Sabasil
+                    accountNumber: '2133213321'
+                    countryCode: NG
+                    meta: {}
+              paymentMethodDeleted:
+                summary: Payment Method Deleted
+                value:
+                  event: PAYMENT_METHOD.DELETED
+                  data:
+                    paymentMethodId: 69528259ba52c13b669fb241
+                    channel: BANK_ACCOUNT
+                    customerId: 69528240ba52c13b669fb239
+                    institution:
+                      institutionId: ''
+                      institutionName: United Bank for Africa
+                      institutionCode: ''
+                      institutionAddress: ''
+                    transaction:
+                      transactionInvoice: ''
+                      transactionNarration: ''
+                    recipient:
+                      recipientEmail: ''
+                      recipientPhone: ''
+                      recipientAddress: ''
+                      recipientName: ''
+                    accountName: Sabasil
+                    accountNumber: '2133213321'
+                    countryCode: NG
+                    meta: {}
+      responses:
+        '200':
+          description: Acknowledge receipt. Return any 2xx status code quickly. Response body is ignored.
+        '400':
+          description: Bad Request, malformed payload, invalid/missing signature, etc. Afriex will retry delivery.
+        '401':
+          description: Unauthorized, signature verification failed.
+  transaction.events:
+    post:
+      operationId: transactionWebhookEvent
+      summary: Transaction Events
+      description: 'Afriex sends real-time webhook notifications to your configured URL whenever a transaction is **created** or **updated**.
+
+
+        - `TRANSACTION.CREATED`: Fired when a new transaction is initiated.
+
+        - `TRANSACTION.UPDATED`: Fired when the transaction status or other fields change (most commonly `status` and `updatedAt`).
+
+
+        The payload structure is **identical** for both events. Only the `event` field and potentially `status` + `updatedAt` differ.
+
+
+        **Security**: Every request includes an `x-webhook-signature` header. You **must** verify this signature using Afriex''s public key before processing. See the Webhooks Overview & Security section for verification instructions.'
+      tags:
+      - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  enum:
+                  - TRANSACTION.CREATED
+                  - TRANSACTION.UPDATED
+                  description: Identifies which transaction event occurred
+                  examples:
+                  - TRANSACTION.UPDATED
+                data:
+                  type: object
+                  description: Details of the transaction
+                  properties:
+                    status:
+                      type: string
+                      description: Current status of the transaction
+                      enum:
+                      - PENDING
+                      - PROCESSING
+                      - SUCCESS
+                      - FAILED
+                      - CANCELLED
+                      - REFUNDED
+                      - RETRY
+                      - UNKNOWN
+                      - SCHEDULED
+                      - CUSTOMER_ACTION_REQUIRED
+                      - REJECTED
+                      - IN_REVIEW
+                      - CHECKER_APPROVAL_REQUIRED
+                      - ENGINEERING_REVIEW_REQUIRED
+                      - RFI_REQUESTED
+                      - DISPUTED
+                      - DISPUTE_RESOLVED
+                      - DISPUTE_WON
+                      - DISPUTE_LOST
+                      - DISPUTE_EVIDENCE_SUBMITTED
+                      examples:
+                      - PENDING
+                    type:
+                      type: string
+                      description: Type/direction of the transaction
+                      enum:
+                      - DEPOSIT
+                      - WITHDRAW
+                      - SWAP
+                      examples:
+                      - WITHDRAW
+                    channel:
+                      type: string
+                      enum:
+                      - BANK_ACCOUNT
+                      - SWIFT
+                      - MOBILE_MONEY
+                      - UPI
+                      - INTERAC
+                      - WE_CHAT
+                      - CARD
+                      - CRYPTO
+                      - VIRTUAL_BANK_ACCOUNT
+                      - POOL_ACCOUNT
+                      - ACH_BANK_ACCOUNT
+                      - PAYBILL_TILL
+                      - RFP
+                      - VIRTUAL_CARD
+                      - ALIPAY
+                      - WALLET
+                      description: Payment channel of the transaction.
+                      examples:
+                      - BANK_ACCOUNT
+                    sourceAmount:
+                      type: string
+                      description: Amount in source currency (string for precision)
+                      examples:
+                      - '3.316587998'
+                    sourceCurrency:
+                      type: string
+                      description: ISO 4217 source currency code
+                      examples:
+                      - USD
+                    destinationAmount:
+                      type: string
+                      description: Amount in destination currency (string)
+                      examples:
+                      - '5000'
+                    destinationCurrency:
+                      type: string
+                      description: ISO 4217 destination currency code
+                      examples:
+                      - NGN
+                    sourceId:
+                      type: string
+                      description: ID of the source payment method (e.g. for deposits)
+                      examples:
+                      - 695271a3ba52c13b669fad2b
+                    destinationId:
+                      type: string
+                      description: ID of the destination (e.g. payment method ID for withdraws)
+                      examples:
+                      - 695271a3ba52c13b669fad2b
+                    customerId:
+                      type: string
+                      description: ID of the customer who owns this transaction
+                      examples:
+                      - 69528240ba52c13b669fb239
+                    transactionId:
+                      type: string
+                      description: Unique identifier of the transaction
+                      examples:
+                      - 6952826eba52c13b669fb263
+                    merchantReference:
+                      type: string
+                      description: The merchant-supplied reference (mirrors meta.reference from the create request).
+                      examples:
+                      - order-12345
+                    meta:
+                      type: object
+                      description: Additional transaction metadata
+                      properties:
+                        narration:
+                          type: string
+                          examples:
+                          - ''
+                        invoice:
+                          type: string
+                          examples:
+                          - ''
+                        idempotencyKey:
+                          type: string
+                          examples:
+                          - ''
+                        reference:
+                          type: string
+                          examples:
+                          - ''
+                      additionalProperties: true
+                    createdAt:
+                      type: string
+                      format: date-time
+                      description: ISO 8601 timestamp when the transaction was created
+                      examples:
+                      - '2025-12-29T13:30:22.554Z'
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      description: ISO 8601 timestamp of the last update
+                      examples:
+                      - '2025-12-29T13:30:22.554Z'
+                  required:
+                  - status
+                  - type
+                  - sourceAmount
+                  - sourceCurrency
+                  - destinationAmount
+                  - destinationCurrency
+                  - customerId
+                  - transactionId
+                  - createdAt
+                  - updatedAt
+                  additionalProperties: false
+              required:
+              - event
+              - data
+              additionalProperties: false
+            examples:
+              transactionCreated:
+                summary: Transaction Created
+                value:
+                  event: TRANSACTION.CREATED
+                  data:
+                    status: PENDING
+                    type: WITHDRAW
+                    channel: BANK_ACCOUNT
+                    sourceAmount: '3.316587998'
+                    sourceCurrency: USD
+                    destinationAmount: '5000'
+                    destinationCurrency: NGN
+                    destinationId: 695271a3ba52c13b669fad2b
+                    customerId: 69528240ba52c13b669fb239
+                    transactionId: 6952826eba52c13b669fb263
+                    meta:
+                      narration: ''
+                      invoice: ''
+                      idempotencyKey: ''
+                      reference: ''
+                    createdAt: '2025-12-29T13:30:22.554Z'
+                    updatedAt: '2025-12-29T13:30:22.554Z'
+              transactionUpdated:
+                summary: Transaction Updated (status changed)
+                value:
+                  event: TRANSACTION.UPDATED
+                  data:
+                    status: SUCCESS
+                    type: WITHDRAW
+                    channel: BANK_ACCOUNT
+                    sourceAmount: '3.316587998'
+                    sourceCurrency: USD
+                    destinationAmount: '5000'
+                    destinationCurrency: NGN
+                    destinationId: 695271a3ba52c13b669fad2b
+                    customerId: 69528240ba52c13b669fb239
+                    transactionId: 6952826eba52c13b669fb263
+                    meta:
+                      narration: ''
+                      invoice: ''
+                      idempotencyKey: ''
+                      reference: ''
+                    createdAt: '2025-12-29T13:30:22.554Z'
+                    updatedAt: '2025-12-29T13:45:10.123Z'
+      responses:
+        '200':
+          description: Acknowledge receipt. Return any 2xx status code quickly. Response body is ignored.
+        '400':
+          description: Bad Request, malformed payload, invalid/missing signature, etc. Afriex will retry delivery.
+        '401':
+          description: Unauthorized, signature verification failed.
+  checkout_session.events:
+    post:
+      operationId: checkoutSessionWebhookEvent
+      summary: Checkout Session Events
+      description: 'Afriex delivers a webhook to your configured URL when a hosted checkout session is created. Checkout sessions are currently available in the sandbox/staging environment only.
+
+
+        **Security**: Every request includes an `x-webhook-signature` header. You **must** verify this signature using Afriex''s public key before processing. See the Webhooks Overview & Security section for verification instructions.'
+      tags:
+      - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  enum:
+                  - CHECKOUT_SESSION.CREATED
+                  description: Identifies which checkout session event occurred
+                  examples:
+                  - CHECKOUT_SESSION.CREATED
+                data:
+                  type: object
+                  description: Details of the checkout session
+                  properties:
+                    sessionId:
+                      type: string
+                      description: Unique identifier of the checkout session
+                      examples:
+                      - 69528240ba52c13b669fb239
+                    merchantReference:
+                      type: string
+                      description: The merchant-supplied reference for the session
+                      examples:
+                      - order-12345
+                    amount:
+                      type: integer
+                      description: The session amount
+                      examples:
+                      - 5000
+                    currency:
+                      type: string
+                      description: ISO 4217 currency code
+                      examples:
+                      - NGN
+                    afriexTransactionId:
+                      type: string
+                      description: The Afriex transaction id once the session is paid
+                      examples:
+                      - 6952826eba52c13b669fb263
+                    paidAt:
+                      type: string
+                      format: date-time
+                      description: Timestamp when the session was paid
+                    expiresAt:
+                      type: string
+                      format: date-time
+                      description: Timestamp when the session expires
+                      examples:
+                      - '2025-12-29T13:45:10.123Z'
+                    createdAt:
+                      type: string
+                      format: date-time
+                      description: Timestamp when the session was created
+                      examples:
+                      - '2025-12-29T13:30:22.554Z'
+                    metadata:
+                      type: object
+                      description: Merchant-supplied metadata attached to the session
+                      additionalProperties:
+                        type: string
+                    customer:
+                      type: object
+                      description: The customer associated with the session
+                      properties:
+                        name:
+                          type: string
+                        email:
+                          type: string
+                          format: email
+                        phone:
+                          type: string
+                        countryCode:
+                          type: string
+                      additionalProperties: true
+                  required:
+                  - sessionId
+                  - merchantReference
+                  - amount
+                  - currency
+                  - expiresAt
+              required:
+              - event
+              - data
+            examples:
+              checkoutSessionCreated:
+                summary: Checkout Session Created
+                value:
+                  event: CHECKOUT_SESSION.CREATED
+                  data:
+                    sessionId: 69528240ba52c13b669fb239
+                    merchantReference: order-12345
+                    amount: 5000
+                    currency: NGN
+                    expiresAt: '2025-12-29T13:45:10.123Z'
+                    createdAt: '2025-12-29T13:30:22.554Z'
+                    metadata: {}
+                    customer:
+                      name: John Doe
+                      email: john.doe@example.com
+                      phone: '+2348192837465'
+                      countryCode: NG
+      responses:
+        '200':
+          description: Acknowledge receipt. Return any 2xx status code quickly. Response body is ignored.
+        '400':
+          description: Bad Request, malformed payload, invalid/missing signature, etc. Afriex will retry delivery.
+        '401':
+          description: Unauthorized, signature verification failed.
+  pool_deposit_request.events:
+    post:
+      operationId: poolDepositRequestWebhookEvent
+      summary: Pool Deposit Events
+      description: 'Afriex delivers a webhook to your configured URL when a pool account deposit you submitted is rejected during review.
+
+
+        Submitting proof through `POST /api/v1/transaction/pool-account` creates a transaction in `IN_REVIEW`. An operator then confirms or rejects the inflow: approval surfaces as `TRANSACTION.CREATED`, rejection surfaces here. This event cannot be fired from `POST /api/v1/webhooks/trigger`.
+
+
+        **Security**: Every request includes an `x-webhook-signature` header. You **must** verify this signature using Afriex''s public key before processing. See the Webhooks Overview & Security section for verification instructions.'
+      tags:
+      - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  enum:
+                  - POOL_DEPOSIT_REQUEST.REJECTED
+                  description: Identifies which pool deposit event occurred
+                  examples:
+                  - POOL_DEPOSIT_REQUEST.REJECTED
+                data:
+                  type: object
+                  description: Details of the rejected pool deposit. A flat, purpose-built shape rather than the full transaction object. Fetch the transaction with `GET /api/v1/transaction/{transactionId}` if you need the rest of it.
+                  required:
+                  - transactionId
+                  - reference
+                  - rejectionReason
+                  - resubmissionRequired
+                  properties:
+                    transactionId:
+                      type: string
+                      description: The transaction created by your proof submission, the one that was reviewed and rejected
+                      examples:
+                      - 69528240ba52c13b669fb239
+                    reference:
+                      type: string
+                      description: The reference you supplied on the submission
+                      examples:
+                      - pool-account-reference
+                    amount:
+                      type: number
+                      description: The deposit amount. Omitted when the transaction carries no destination amount.
+                      examples:
+                      - 5000
+                    currency:
+                      type: string
+                      description: ISO 4217 currency code. Omitted when the transaction carries no destination amount.
+                      examples:
+                      - NGN
+                    rejectionReason:
+                      type: string
+                      description: Free-text reason entered by the reviewer. Surface it to your operator; do not branch on its contents.
+                      examples:
+                      - Sender name does not match the submitted proof
+                    resubmissionRequired:
+                      type: boolean
+                      description: '`true` when you can correct the submission and send fresh proof, `false` when the rejection is final.'
+                      examples:
+                      - true
+            examples:
+              rejected:
+                summary: Pool deposit rejected, resubmission allowed
+                value:
+                  event: POOL_DEPOSIT_REQUEST.REJECTED
+                  data:
+                    transactionId: 69528240ba52c13b669fb239
+                    reference: pool-account-reference
+                    amount: 5000
+                    currency: NGN
+                    rejectionReason: Sender name does not match the submitted proof
+                    resubmissionRequired: true
+      responses:
+        '200':
+          description: Acknowledge receipt. Return any 2xx status code quickly. Response body is ignored.
+        '400':
+          description: Bad Request, malformed payload, invalid/missing signature, etc. Afriex will retry delivery.
+        '401':
+          description: Unauthorized, signature verification failed.
+components:
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
+  schemas:
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    WebhookEventName:
+      type: string
+      description: The webhook event identifier.
+      enum:
+      - CUSTOMER.CREATED
+      - CUSTOMER.UPDATED
+      - CUSTOMER.DELETED
+      - PAYMENT_METHOD.CREATED
+      - PAYMENT_METHOD.UPDATED
+      - PAYMENT_METHOD.DELETED
+      - TRANSACTION.CREATED
+      - TRANSACTION.UPDATED
+      - CHECKOUT_SESSION.CREATED
+      - POOL_DEPOSIT_REQUEST.REJECTED
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Static business API key issued from the dashboard. A business can provision **multiple API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions, create deposits, etc). Permissions are chosen per key at creation time in the dashboard and may be revoked by deleting the key. Requests made with a key that does not include the permission required by the target endpoint is rejected with a `401 Unauthorized` response, the same response an unrecognised, malformed or revoked key returns. The API does not distinguish the two cases on the wire. Manage your keys and their permissions under **Developer → API keys** in the dashboard.

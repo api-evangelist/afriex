@@ -1,0 +1,1384 @@
+openapi: 3.2.0
+info:
+  title: Afriex Business Transactions API
+  version: 1.0.13
+  description: 'Welcome to the Afriex Business API. This API allows you to manage customers, process payments, handle payouts, and receive real-time notifications via webhooks.
+
+
+    For detailed guidance on authentication, pagination, error handling, and webhooks, please refer to the dedicated guides in the top bar. The guide provides a step-by-step instructions to help you integrate seamlessly.'
+  termsOfService: https://www.afriex.com/terms-and-condition
+  contact:
+    name: Afriex API Support
+    email: support@afriex.com
+    url: https://docs.afriex.com
+  license:
+    name: Proprietary
+    url: https://www.afriex.com/terms-and-condition
+servers:
+- url: https://sandbox.api.afriex.com
+  description: Staging Base URL
+- url: https://api.afriex.com
+  description: Production Base URL
+security:
+- ApiKey: []
+tags:
+- name: Transactions
+  description: Create and track deposits, withdrawals, and swaps.
+paths:
+  /api/v1/transaction:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: createTransaction
+      summary: Create a new transaction
+      description: 'Create a new transaction to process a payment for a customer. Use `type: WITHDRAW` to send funds to a destination payment method (requires `destinationId`), `type: DEPOSIT` to pull funds from a source payment method (requires `sourceId`), or `type: SWAP` to convert funds between currencies within the Afriex wallet (requires `sourceCurrency`, `destinationCurrency`, `meta`, and exactly one of `sourceAmount` or `destinationAmount`).'
+      tags:
+      - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customerId:
+                  type: string
+                  description: The unique identifier of the customer. Required for DEPOSIT and WITHDRAW transactions. Not required for SWAP, if omitted, the transaction runs against the business wallet.
+                  examples:
+                  - 69528240ba52c13b669fb239
+                type:
+                  type: string
+                  description: The type of transaction. DEPOSIT pulls funds from the customer's source payment method (requires sourceId). WITHDRAW sends funds to the customer's destination payment method (requires destinationId). SWAP converts funds between currencies within the Afriex wallet (requires sourceCurrency, destinationCurrency, meta, and exactly one of sourceAmount or destinationAmount; the API computes the other side at the live exchange rate, and sending both is rejected). If omitted, defaults to WITHDRAW.
+                  enum:
+                  - DEPOSIT
+                  - WITHDRAW
+                  - SWAP
+                sourceAmount:
+                  description: 'The transaction amount in the source currency. For WITHDRAW, provide exactly one of sourceAmount or destinationAmount: sending sourceAmount alone lets the API compute destinationAmount at the live forward rate (useful when you know only how much you want to send, e.g. a SWIFT payout of a fixed source balance). For DEPOSIT the required amount is destinationAmount, so sourceAmount is optional. For SWAP, provide exactly one of sourceAmount or destinationAmount: setting sourceAmount makes the API compute destinationAmount at the live exchange rate.'
+                  $ref: '#/components/schemas/amount'
+                destinationAmount:
+                  description: 'The transaction amount in the destination currency. Required for DEPOSIT. For WITHDRAW, provide exactly one of sourceAmount or destinationAmount: setting destinationAmount fixes the payout amount, while omitting it and sending sourceAmount lets the API compute destinationAmount at the live forward rate. For SWAP, provide exactly one of sourceAmount or destinationAmount: setting destinationAmount instead makes the API compute sourceAmount at the inverse rate. Sending both amounts on a SWAP is rejected.'
+                  $ref: '#/components/schemas/amount'
+                destinationCurrency:
+                  type: string
+                  description: The 3-letter ISO 4217 currency code of the destination currency (e.g., USD, NGN).
+                  examples:
+                  - USD
+                sourceCurrency:
+                  type: string
+                  description: The 3-letter ISO 4217 currency code of the source currency (e.g., USD, NGN).
+                  examples:
+                  - NGN
+                destinationId:
+                  type: string
+                  description: 'Required for WITHDRAW transactions. The id of the destination payment method that money will be sent to.
+
+                    '
+                  examples:
+                  - 690df3281c11eea59108fcaf
+                sourceId:
+                  type: string
+                  description: 'Required for DEPOSIT transactions. The id of the source payment method that money will be pulled from.
+
+                    '
+                  examples:
+                  - 690df3281c11eea59108fcaf
+                meta:
+                  description: Transaction metadata. idempotencyKey and reference are required.
+                  $ref: '#/components/schemas/TransactionMeta'
+                shouldPreferSourceAmount:
+                  type: boolean
+                  description: Opt in to deriving destinationAmount from sourceAmount even when both amounts are sent. Defaults to false, which keeps destination-wins semantics so a caller that echoes both amounts still gets the destinationAmount they asked for. Set true to have sourceAmount drive the payout via the forward rate.
+                correspondentBankName:
+                  type: string
+                  description: The correspondent (intermediary) bank name for USD payouts (WITHDRAW with destinationCurrency USD and meta.settlement 'request'). Only used as a fallback when the destination payment method lacks it — the payment method's value takes precedence. Must be provided together with correspondentBankAccountNumber.
+                correspondentBankAccountNumber:
+                  type: string
+                  description: The correspondent (intermediary) bank account number for USD payouts (WITHDRAW with destinationCurrency USD and meta.settlement 'request'). Only used as a fallback when the destination payment method lacks it — the payment method's value takes precedence. Must be provided together with correspondentBankName.
+              oneOf:
+              - title: Withdraw
+                description: Send funds to a customer's destination payment method. This is the default when type is omitted. Provide exactly one of sourceAmount or destinationAmount; sending sourceAmount alone lets the API compute the destination side at the live forward rate.
+                required:
+                - customerId
+                - sourceCurrency
+                - destinationCurrency
+                - destinationId
+                - meta
+                properties:
+                  type:
+                    enum:
+                    - WITHDRAW
+              - title: Deposit
+                description: Pull funds from a customer's source payment method.
+                required:
+                - type
+                - customerId
+                - destinationAmount
+                - sourceCurrency
+                - destinationCurrency
+                - sourceId
+                - meta
+                properties:
+                  type:
+                    enum:
+                    - DEPOSIT
+              - title: Swap
+                description: Convert funds between currencies within the Afriex wallet. Provide exactly one of sourceAmount or destinationAmount; sending both is rejected.
+                required:
+                - type
+                - sourceCurrency
+                - destinationCurrency
+                - meta
+                properties:
+                  type:
+                    enum:
+                    - SWAP
+            examples:
+              Withdraw:
+                summary: 'Withdraw (destination amount): fix the payout amount the customer receives'
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: WITHDRAW
+                  destinationAmount: 5000
+                  sourceCurrency: USD
+                  destinationCurrency: NGN
+                  destinationId: 690df3281c11eea59108fcaf
+                  meta:
+                    reference: ref-withdraw-001
+                    idempotencyKey: idem-withdraw-001
+              WithdrawSourceAmount:
+                summary: 'Withdraw (source amount, SWIFT MZN→USD): send the full source balance and let the API compute the payout at the live forward rate'
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: WITHDRAW
+                  sourceAmount: 10000
+                  sourceCurrency: MZN
+                  destinationCurrency: USD
+                  destinationId: 690df3281c11eea59108fcaf
+                  meta:
+                    reference: ref-withdraw-002
+                    idempotencyKey: idem-withdraw-002
+              Deposit:
+                summary: Deposit, pull funds from a customer's source payment method
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: DEPOSIT
+                  sourceAmount: '10'
+                  destinationAmount: 5000
+                  sourceCurrency: USD
+                  destinationCurrency: NGN
+                  sourceId: 690df3281c11eea59108fcaf
+                  meta:
+                    reference: ref-deposit-001
+                    idempotencyKey: idem-deposit-001
+              Swap:
+                summary: 'Swap (source-only): convert funds between currencies within the Afriex wallet'
+                value:
+                  type: SWAP
+                  sourceAmount: 10
+                  sourceCurrency: USD
+                  destinationCurrency: NGN
+                  meta:
+                    reference: ref-swap-001
+                    idempotencyKey: idem-swap-001
+              SwapDestination:
+                summary: 'Swap (destination-only): the API computes the source amount at the inverse rate'
+                value:
+                  type: SWAP
+                  destinationAmount: 16500
+                  sourceCurrency: USD
+                  destinationCurrency: NGN
+                  meta:
+                    reference: ref-swap-002
+                    idempotencyKey: idem-swap-002
+      responses:
+        '201':
+          description: Transaction created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+              examples:
+                withdraw:
+                  summary: WITHDRAW transaction created (pending)
+                  value:
+                    data:
+                      status: PENDING
+                      type: WITHDRAW
+                      channel: BANK_ACCOUNT
+                      sourceAmount: '3.28847'
+                      sourceCurrency: USD
+                      destinationAmount: '5000'
+                      destinationCurrency: NGN
+                      destinationId: 690df3281c11eea59108fcaf
+                      customerId: 69528240ba52c13b669fb239
+                      transactionId: 69d60071ab82306f11b03393
+                      meta:
+                        reference: ref-withdraw-001
+                        idempotencyKey: idem-withdraw-001
+                      createdAt: '2026-04-08T07:14:57.444Z'
+                      updatedAt: '2026-04-08T07:14:57.444Z'
+                swap:
+                  summary: SWAP transaction created (success)
+                  value:
+                    data:
+                      status: SUCCESS
+                      type: SWAP
+                      channel: WALLET
+                      sourceAmount: '10'
+                      sourceCurrency: USD
+                      destinationAmount: '14101.041'
+                      destinationCurrency: NGN
+                      destinationId: ''
+                      customerId: ''
+                      transactionId: 69d60072ab82306f11b033b9
+                      meta:
+                        reference: ref-swap-001
+                        idempotencyKey: idem-swap-001
+                      createdAt: '2026-04-08T07:14:58.237Z'
+                      updatedAt: '2026-04-08T07:14:58.237Z'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                swapBothAmounts:
+                  summary: SWAP with both amounts provided
+                  value:
+                    code: INVALID_BUSINESS_TRANSACTION_REQUEST
+                    error: Invalid business transaction request
+                    details:
+                      errorMessage: Invalid business transaction request
+                      friendlyMessage: Only one of source amount or destination amount can be provided
+                missingDestinationAmount:
+                  summary: Missing destination amount
+                  value:
+                    code: INVALID_BUSINESS_TRANSACTION_REQUEST
+                    error: Invalid business transaction request
+                    details:
+                      errorMessage: Invalid business transaction request
+                      friendlyMessage: Invalid destination amount
+                invalidCurrency:
+                  summary: Invalid currency code
+                  value:
+                    code: INVALID_BUSINESS_TRANSACTION_REQUEST
+                    error: Invalid business transaction request
+                    details:
+                      errorMessage: Invalid business transaction request
+                      friendlyMessage: Invalid source currency
+                missingIdempotencyKey:
+                  summary: Missing idempotency key
+                  value:
+                    code: INVALID_BUSINESS_TRANSACTION_REQUEST
+                    error: Invalid business transaction request
+                    details:
+                      errorMessage: Invalid business transaction request
+                      friendlyMessage: No idempotency key provided
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                customerNotFound:
+                  summary: Customer not found
+                  value:
+                    code: USER_NOT_FOUND
+                    error: User not found
+                    details:
+                      errorMessage: User not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const transaction = await afriex.transactions.create({\n  customerId: \"customer-id\",\n  sourceAmount: \"10\",\n  destinationAmount: \"5000\",\n  sourceCurrency: \"USD\",\n  destinationCurrency: \"NGN\",\n  destinationId: \"payment-method-id\",\n  meta: {\n    idempotencyKey: \"unique-key-123\",\n    reference: \"order-456\",\n    narration: \"Payment for services\",\n  },\n});\n"
+    get:
+      operationId: listTransactions
+      summary: Get transaction list
+      description: Retrieves a paginated list of transactions.
+      tags:
+      - Transactions
+      parameters:
+      - name: page
+        in: query
+        description: Zero-based page number for pagination.
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        description: Number of items per page (max 100).
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      - name: transactionId
+        in: query
+        description: Filter by the Afriex transaction ID (`transactionId`) returned when the transaction was created.
+        required: false
+        schema:
+          type: string
+      - name: reference
+        in: query
+        description: Filter by the merchant-supplied reference set in `meta.reference` at transaction creation.
+        required: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Filter by one or more transaction statuses. Use a comma-separated list for multiple values (e.g. `?status=PENDING,PROCESSING`).
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - PENDING
+            - PROCESSING
+            - SUCCESS
+            - FAILED
+            - CANCELLED
+            - REFUNDED
+            - RETRY
+            - UNKNOWN
+            - SCHEDULED
+            - CUSTOMER_ACTION_REQUIRED
+            - REJECTED
+            - IN_REVIEW
+            - CHECKER_APPROVAL_REQUIRED
+            - ENGINEERING_REVIEW_REQUIRED
+            - RFI_REQUESTED
+            - DISPUTED
+            - DISPUTE_RESOLVED
+            - DISPUTE_WON
+            - DISPUTE_LOST
+            - DISPUTE_EVIDENCE_SUBMITTED
+        style: form
+        explode: false
+      - name: type
+        in: query
+        description: Filter by one or more transaction types. Use a comma-separated list for multiple values (e.g. `?type=DEPOSIT,WITHDRAW`).
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - DEPOSIT
+            - WITHDRAW
+            - SWAP
+        style: form
+        explode: false
+      - name: channel
+        in: query
+        description: Filter by one or more payment channels (source or destination). Use a comma-separated list for multiple values (e.g. `?channel=BANK_ACCOUNT,MOBILE_MONEY`).
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - BANK_ACCOUNT
+            - MOBILE_MONEY
+            - CARD
+            - CRYPTO
+            - VIRTUAL_BANK_ACCOUNT
+            - ACH_BANK_ACCOUNT
+            - INTERAC
+            - PAYBILL_TILL
+            - RFP
+            - UPI
+            - VIRTUAL_CARD
+            - SWIFT
+            - WE_CHAT
+            - ALIPAY
+            - WALLET
+        style: form
+        explode: false
+      - name: currency
+        in: query
+        description: Filter by one or more 3-letter ISO 4217 currency codes (source or destination). Use a comma-separated list for multiple values (e.g. `?currency=USD,NGN`).
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            examples:
+            - USD
+        style: form
+        explode: false
+      - name: fromDate
+        in: query
+        description: Return only transactions created on or after this ISO 8601 date-time (e.g. `2025-01-01T00:00:00.000Z`).
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: toDate
+        in: query
+        description: Return only transactions created on or before this ISO 8601 date-time. Must be equal to or later than `fromDate`.
+        required: false
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: List of transactions retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  page:
+                    type: integer
+                    description: Current page number
+                  total:
+                    type: integer
+                    description: Total number of transactions matching the query
+              examples:
+                success:
+                  summary: Transaction list retrieved
+                  value:
+                    data:
+                    - status: SUCCESS
+                      type: SWAP
+                      channel: WALLET
+                      sourceAmount: '10'
+                      sourceCurrency: USD
+                      destinationAmount: '14101.041'
+                      destinationCurrency: NGN
+                      destinationId: ''
+                      customerId: 68e6717848e1f632e9686460
+                      transactionId: 69d3c79531c0234586ad5ee0
+                      meta:
+                        reference: ref-swap-minimal-002
+                        idempotencyKey: idem-swap-minimal-002
+                      createdAt: '2026-04-06T14:47:49.166Z'
+                      updatedAt: '2026-04-06T14:47:49.166Z'
+                    - status: PENDING
+                      type: WITHDRAW
+                      channel: BANK_ACCOUNT
+                      sourceAmount: '3.28847'
+                      sourceCurrency: USD
+                      destinationAmount: '5000'
+                      destinationCurrency: NGN
+                      destinationId: 690df3281c11eea59108fcaf
+                      customerId: 69528240ba52c13b669fb239
+                      transactionId: 69d60071ab82306f11b03393
+                      meta:
+                        reference: ref-withdraw-001
+                        idempotencyKey: idem-withdraw-001
+                      createdAt: '2026-04-08T07:14:57.444Z'
+                      updatedAt: '2026-04-08T07:14:57.444Z'
+                    total: 285
+                    page: 0
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '422':
+          description: Request failed schema validation. `details.friendlyMessage` carries the specific field error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: Validation error
+                    details:
+                      errorMessage: Validation error
+                      friendlyMessage: '''page'' must be a number'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const response = await afriex.transactions.list({\n  page: 0,\n  limit: 20,\n  status: [\"PENDING\", \"PROCESSING\"],\n  currency: [\"USD\", \"NGN\"],\n  fromDate: \"2026-01-01T00:00:00.000Z\",\n  toDate: \"2026-01-31T23:59:59.999Z\",\n});\n\nconsole.log(response.data); // Transaction[]\n"
+  /api/v1/transaction/{transactionId}:
+    parameters:
+    - $ref: '#/components/parameters/x-api-signature'
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: getTransaction
+      summary: Get transaction by ID
+      description: Retrieves a specific transaction by its unique identifier.
+      tags:
+      - Transactions
+      parameters:
+      - name: transactionId
+        in: path
+        description: The unique identifier of the transaction
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Transaction retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+              examples:
+                success:
+                  summary: Transaction retrieved
+                  value:
+                    data:
+                      status: SUCCESS
+                      type: SWAP
+                      channel: WALLET
+                      sourceAmount: '10'
+                      sourceCurrency: USD
+                      destinationAmount: '14101.041'
+                      destinationCurrency: NGN
+                      destinationId: ''
+                      customerId: 68e6717848e1f632e9686460
+                      transactionId: 69d3c79531c0234586ad5ee0
+                      meta:
+                        reference: ref-swap-minimal-002
+                        idempotencyKey: idem-swap-minimal-002
+                      createdAt: '2026-04-06T14:47:49.166Z'
+                      updatedAt: '2026-04-06T14:47:49.166Z'
+        '400':
+          description: Invalid transaction ID format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''transactionId'' must be a string'
+                    details: {}
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Transaction not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Transaction not found
+                  value:
+                    code: BUSINESS_TRANSACTION_NOT_FOUND
+                    error: Business transaction not found
+                    details:
+                      errorMessage: Business transaction not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: 'const transaction = await afriex.transactions.get("transaction-id");
+
+          '
+  /api/v1/transaction/{transactionId}/authorize:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: authorizeTransaction
+      summary: Authorize a pending transaction
+      description: Completes a transaction that was created in a `CUSTOMER_ACTION_REQUIRED` state and needs an extra authorization step (for example, a one-time password on a mobile-money deposit). The body is discriminated by `type`; today the only supported variant is `OTP`.
+      tags:
+      - Transactions
+      parameters:
+      - name: transactionId
+        in: path
+        description: The unique identifier of the transaction
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: The authorization method.
+                  enum:
+                  - OTP
+                otp:
+                  type: string
+                  description: The one-time password supplied by the customer.
+              required:
+              - type
+              - otp
+            examples:
+              otp:
+                summary: Authorize a deposit with an OTP
+                value:
+                  type: OTP
+                  otp: '123456'
+      responses:
+        '200':
+          description: Transaction authorized successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+              examples:
+                success:
+                  summary: Transaction authorized
+                  value:
+                    data:
+                      status: PROCESSING
+                      type: DEPOSIT
+                      channel: MOBILE_MONEY
+                      sourceAmount: '10'
+                      sourceCurrency: USD
+                      destinationAmount: '14101.041'
+                      destinationCurrency: NGN
+                      customerId: 68e6717848e1f632e9686460
+                      transactionId: 69d3c79531c0234586ad5ee0
+                      meta:
+                        reference: ref-deposit-001
+                        idempotencyKey: idem-deposit-001
+                      createdAt: '2026-04-06T14:47:49.166Z'
+                      updatedAt: '2026-04-06T14:49:02.110Z'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''otp'' is required'
+                    details: {}
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Transaction not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Transaction not found
+                  value:
+                    code: BUSINESS_TRANSACTION_NOT_FOUND
+                    error: Business transaction not found
+                    details:
+                      errorMessage: Business transaction not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const transaction = await afriex.transactions.authorize(\"transaction-id\", {\n  type: \"OTP\",\n  otp: \"123456\",\n});\n"
+  /api/v1/transaction/{transactionId}/advice:
+    parameters:
+    - $ref: '#/components/parameters/x-api-signature'
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: getTransactionAdvice
+      summary: Get settlement & remittance advice
+      description: 'Returns a short-lived presigned download URL for the settlement & remittance advice PDF auto-generated for a USD withdrawal from your collection wallet (a withdrawal created with `settlement: "request"`). The advice is issued with status `PENDING` when the withdrawal is created and regenerated with status `COMPLETED` (same reference, incremented version) once the withdrawal succeeds. Scoped to your business: you can only fetch advices for your own transactions. This document is a settlement and remittance advice, not a tax invoice.'
+      tags:
+      - Transactions
+      parameters:
+      - name: transactionId
+        in: path
+        description: The unique identifier of the transaction
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Settlement advice download URL retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        description: Short-lived (5 minute) presigned S3 URL for the advice PDF.
+                      reference:
+                        type: string
+                        description: Stable advice reference number. Generated once per transaction and reused across regenerations.
+                      status:
+                        type: string
+                        enum:
+                        - PENDING
+                        - COMPLETED
+                        description: PENDING until the withdrawal succeeds, COMPLETED afterwards.
+                      version:
+                        type: integer
+                        description: Regeneration counter. Starts at 1 at creation and increments when the advice is regenerated on completion.
+                      generatedAt:
+                        type: string
+                        format: date-time
+              examples:
+                success:
+                  summary: Advice retrieved
+                  value:
+                    data:
+                      url: https://example-bucket.s3.amazonaws.com/<redacted-object-key>.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=...
+                      reference: ADV-EXAMPLE-0001
+                      status: PENDING
+                      version: 1
+                      generatedAt: '2026-01-01T00:00:00.000Z'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Transaction not found, or no settlement advice exists for this transaction (only USD withdrawals from the collection wallet qualify).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Transaction or advice not found
+                  value:
+                    code: BUSINESS_TRANSACTION_NOT_FOUND
+                    error: Business transaction not found
+                    details:
+                      errorMessage: No settlement advice exists for this transaction
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+  /api/v1/transaction/pool-account:
+    parameters:
+    - $ref: '#/components/parameters/x-api-signature'
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: submitPoolAccountPaymentProof
+      summary: Submit a pool-account payment proof
+      description: Submits proof of a deposit made to the business pool account. The request creates a business deposit transaction in `IN_REVIEW` status; an operator confirms the bank inflow before the funds are credited. The response returns that transaction. Duplicate submissions of the same business, customer, amount, reference, timestamp and sender details within the configured idempotency window are rejected.
+      tags:
+      - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoolAccountPaymentProofRequest'
+            examples:
+              minimal:
+                summary: Submit a pool-account proof of payment
+                value:
+                  amount: 5000
+                  customerId: 6929843e2c4653277440acc0
+                  countryCode: NG
+                  reference: 6929843e2c4653277440acc0
+                  fileKey: 64f0c2a1e4b0a1b2c3d4e5f6/proof.pdf
+                  timestamp: '2026-01-01T12:00:00.000Z'
+              withSenderDetails:
+                summary: Submit a proof with sender details
+                value:
+                  amount: 5000
+                  customerId: 6929843e2c4653277440acc0
+                  countryCode: NG
+                  reference: 6929843e2c4653277440acc0
+                  fileKey: 64f0c2a1e4b0a1b2c3d4e5f6/proof.pdf
+                  timestamp: '2026-01-01T12:00:00.000Z'
+                  senderDetails:
+                    name: John Doe
+                    accountNumber: 0123456789
+                    bankName: GTBank
+                    countryCode: NG
+      responses:
+        '201':
+          description: Proof submitted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingRequiredField:
+                  summary: Missing required field
+                  value:
+                    code: INVALID_BUSINESS_POOL_ACCOUNT_REQUEST
+                    error: Invalid business pool account request
+                    details:
+                      errorMessage: Invalid business pool account request
+                      friendlyMessage: No amount provided
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '409':
+          description: Duplicate submission within the idempotency window.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateRequest:
+                  summary: Duplicate submission within the idempotency window
+                  value:
+                    code: DUPLICATE_REQUEST
+                    error: Duplicate request
+                    details:
+                      errorMessage: Duplicate request
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+components:
+  schemas:
+    Transaction:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          description: The unique identifier for the transaction.
+        customerId:
+          type: string
+          description: The unique identifier of the customer.
+        sourceId:
+          type: string
+          description: The unique identifier of the source payment method.
+        destinationId:
+          type: string
+          description: The unique identifier of the destination payment method.
+        sourceAmount:
+          type: string
+          description: The souce transaction amount value
+        sourceCurrency:
+          type: string
+          description: The currency code of the wallet charged.
+        destinationAmount:
+          type: string
+          description: The destination transaction amount value
+        destinationCurrency:
+          type: string
+          description: The description currency code.
+        type:
+          type: string
+          enum:
+          - DEPOSIT
+          - WITHDRAW
+          - SWAP
+          description: The type of transaction.
+        channel:
+          type: string
+          enum:
+          - BANK_ACCOUNT
+          - SWIFT
+          - MOBILE_MONEY
+          - UPI
+          - INTERAC
+          - WE_CHAT
+          - CARD
+          - CRYPTO
+          - VIRTUAL_BANK_ACCOUNT
+          - POOL_ACCOUNT
+          - ACH_BANK_ACCOUNT
+          - PAYBILL_TILL
+          - RFP
+          - VIRTUAL_CARD
+          - ALIPAY
+          - WALLET
+          description: The payment channel of the transaction.
+        status:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - SUCCESS
+          - FAILED
+          - CANCELLED
+          - REFUNDED
+          - RETRY
+          - UNKNOWN
+          - SCHEDULED
+          - CUSTOMER_ACTION_REQUIRED
+          - REJECTED
+          - IN_REVIEW
+          - CHECKER_APPROVAL_REQUIRED
+          - ENGINEERING_REVIEW_REQUIRED
+          - RFI_REQUESTED
+          - DISPUTED
+          - DISPUTE_RESOLVED
+          - DISPUTE_WON
+          - DISPUTE_LOST
+          - DISPUTE_EVIDENCE_SUBMITTED
+          description: 'The current status of the transaction.
+
+
+            `CHECKER_APPROVAL_REQUIRED`, `ENGINEERING_REVIEW_REQUIRED` and `RFI_REQUESTED` are review states: the transaction is still in flight and is waiting on an internal check, not on you. Treat them as non-terminal and keep polling or listening for `TRANSACTION.UPDATED`. `RFI_REQUESTED` may result in someone contacting you for more information about the transfer.'
+        merchantReference:
+          type: string
+          description: The merchant-supplied reference for the transaction (mirrors meta.reference from the create request).
+        rate:
+          type: string
+          description: The realized source-to-destination exchange rate for the transaction, expressed as `1 sourceCurrency = rate destinationCurrency` (equal to destinationAmount / sourceAmount).
+        fee:
+          type: string
+          description: The fee charged for this transaction, denominated in `sourceCurrency`. It is reported separately from `sourceAmount`. Omitted when no fee applied to the transaction.
+        meta:
+          type: object
+          description: Transaction metadata. Echoes the metadata you attached on create and may include server-set state flags such as `otpRequired` and `failureReason`.
+          properties:
+            narration:
+              type: string
+              description: The narration you attached when creating the transaction, echoed back. An empty string when none was provided.
+            otpRequired:
+              type: boolean
+              description: Returned on deposits that may need an extra authorization step. When `true`, the deposit is waiting for the customer to submit a one-time password; call `POST /transaction/{transactionId}/authorize` to complete it.
+            failureReason:
+              type: object
+              description: Present only when `status` is `FAILED` or `REJECTED`. Carries a stable `AFX_*` code and a customer-safe message. Branch on `code` rather than the underlying rail so your integration stays stable across routing changes.
+              required:
+              - code
+              - message
+              - retryable
+              properties:
+                code:
+                  type: string
+                  description: Stable `AFX_*` failure code. Safe to switch on; the set grows over time but existing values do not change meaning.
+                  example: AFX_VELOCITY_LIMIT_EXCEEDED
+                  enum:
+                  - AFX_REQUEST_FAILED
+                  - AFX_SYSTEM_ERROR
+                  - AFX_SERVICE_UNAVAILABLE
+                  - AFX_INVALID_CURRENCY
+                  - AFX_INVALID_AMOUNT
+                  - AFX_INVALID_RECIPIENT
+                  - AFX_RECIPIENT_NOT_FOUND
+                  - AFX_ACCOUNT_CLOSED
+                  - AFX_NAME_MISMATCH
+                  - AFX_BENEFICIARY_RESTRICTED
+                  - AFX_INVALID_SENDER
+                  - AFX_INVALID_REQUEST
+                  - AFX_VELOCITY_LIMIT_EXCEEDED
+                  - AFX_AMOUNT_LIMIT_EXCEEDED
+                  - AFX_PAYMENT_FAILED
+                  - AFX_COMPLIANCE_REJECTED
+                  - AFX_PROPOSAL_EXPIRED
+                message:
+                  type: string
+                  description: Customer-safe short description of the failure. Suitable for display; do not parse — branch on `code` instead.
+                retryable:
+                  type: boolean
+                  description: '`true` when re-submitting the same request (or, for `AFX_PROPOSAL_EXPIRED`, starting a fresh proposal) may succeed. `false` when the caller must change the request before retrying.'
+          additionalProperties: true
+        createdAt:
+          type: string
+          description: The date and time the transaction was created.
+        updatedAt:
+          type: string
+          description: The date and time the transaction was last updated.
+    TransactionMeta:
+      type: object
+      properties:
+        narration:
+          type: string
+          description: The optional reason for the transaction.
+        invoice:
+          type: string
+          description: 'The invoice filename (S3 object key) for the transaction, as returned by the media upload endpoint. Required for SWIFT withdrawals: the referenced object is verified to exist in storage before the transaction is created, so upload the file first and pass the returned key verbatim.'
+        idempotencyKey:
+          type: string
+          description: The idempotency key for the transaction.
+        reference:
+          type: string
+          description: The reference for the transaction.
+        settlement:
+          type: string
+          enum:
+          - spot
+          - request
+          description: 'Optional settlement handling for the transaction. `spot` (the default) processes immediately and debits your Payout wallet. `request` is only supported for WITHDRAW transactions: it debits your Collection wallet (rather than the default Payout wallet) and queues the payout for the next business day in the destination payment method''s country. Omit `settlement` (or send `spot`) for an ordinary payout from the Payout wallet.'
+      required:
+      - idempotencyKey
+      - reference
+    amount:
+      description: A monetary amount. Accepts a number or a numeric string; responses return amounts as strings.
+      oneOf:
+      - type: number
+      - type: string
+      examples:
+      - '100.50'
+    PoolAccountPaymentProofSenderDetails:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          description: The sender's full name.
+        accountNumber:
+          type: string
+          description: The sender's account number or wallet identifier.
+        bankName:
+          type: string
+          description: The sender's bank or financial institution.
+        countryCode:
+          type: string
+          description: ISO 3166-1 alpha-2 country code for the sender.
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    PoolAccountPaymentProofRequest:
+      type: object
+      required:
+      - amount
+      - customerId
+      - countryCode
+      - reference
+      - fileKey
+      - timestamp
+      properties:
+        amount:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          description: The deposit amount in the major currency unit.
+        customerId:
+          type: string
+          description: The Afriex customer ID the deposit should be credited to. Applies when `reference` is a customer reference, in which case it must match that customer. When `reference` is the business's own pool-account reference the deposit is credited to the business and this field is not used for routing.
+        countryCode:
+          type: string
+          description: ISO 3166-1 alpha-2 country code of the pool account.
+        reference:
+          type: string
+          description: The pool-account reference returned by `GET /api/v1/payment-method/pool-account`. Used to reconcile the deposit.
+        fileKey:
+          type: string
+          description: 'The S3 object key of the uploaded proof-of-payment file. Obtain this from `POST /api/v1/media/url` with `type: transaction` first; a URL requested without that type uploads to a different bucket and the key will be rejected as not found.'
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the payment was sent. Used for idempotency together with the other request fields.
+        senderDetails:
+          $ref: '#/components/schemas/PoolAccountPaymentProofSenderDetails'
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
+    x-api-signature:
+      name: x-api-signature
+      in: header
+      required: false
+      description: Signature of the request payload, used for request authentication where payload signing is enabled for your business.
+      schema:
+        type: string
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Static business API key issued from the dashboard. A business can provision **multiple API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions, create deposits, etc). Permissions are chosen per key at creation time in the dashboard and may be revoked by deleting the key. Requests made with a key that does not include the permission required by the target endpoint is rejected with a `401 Unauthorized` response, the same response an unrecognised, malformed or revoked key returns. The API does not distinguish the two cases on the wire. Manage your keys and their permissions under **Developer → API keys** in the dashboard.

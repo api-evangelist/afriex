@@ -1,0 +1,166 @@
+openapi: 3.2.0
+info:
+  title: Afriex Business Media API
+  version: 1.0.13
+  description: 'Welcome to the Afriex Business API. This API allows you to manage customers, process payments, handle payouts, and receive real-time notifications via webhooks.
+
+
+    For detailed guidance on authentication, pagination, error handling, and webhooks, please refer to the dedicated guides in the top bar. The guide provides a step-by-step instructions to help you integrate seamlessly.'
+  termsOfService: https://www.afriex.com/terms-and-condition
+  contact:
+    name: Afriex API Support
+    email: support@afriex.com
+    url: https://docs.afriex.com
+  license:
+    name: Proprietary
+    url: https://www.afriex.com/terms-and-condition
+servers:
+- url: https://sandbox.api.afriex.com
+  description: Staging Base URL
+- url: https://api.afriex.com
+  description: Production Base URL
+security:
+- ApiKey: []
+tags:
+- name: Media
+  description: Generate presigned URLs for secure file uploads.
+paths:
+  /api/v1/media/url:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: generatePresignedURL
+      summary: Generate a presigned URL for file upload
+      description: Generates a presigned S3 URL that the caller can use to upload a file (e.g. a KYC document) directly to Afriex's secure storage. The returned URL is time-limited and scoped to the requested operation.
+      tags:
+      - Media
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaURLRequest'
+            examples:
+              upload-user:
+                summary: Generate a user KYC upload URL
+                value:
+                  fileName: passport.png
+                  type: user
+              upload-transaction:
+                summary: Generate a transaction file upload URL
+                value:
+                  fileName: report.csv
+                  type: transaction
+      responses:
+        '200':
+          description: Presigned URL generated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaURLResponse'
+              examples:
+                url:
+                  summary: Presigned URL
+                  value:
+                    data:
+                      url: https://s3.amazonaws.com/bucket/key?X-Amz-Algorithm=AWS4-HMAC-SHA256&...
+                      key: 64f0c2a1e4b0a1b2c3d4e5f6/invoice.pdf
+                      expiresIn: 300
+        '400':
+          description: Invalid request body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    MediaURLResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            url:
+              type: string
+              description: The presigned URL for the requested upload operation.
+              examples:
+              - https://s3.amazonaws.com/bucket/key?X-Amz-Algorithm=AWS4-HMAC-SHA256&...
+            key:
+              type: string
+              description: 'A stable reference to the uploaded object. Attach this to a later request (e.g. a SWIFT payout invoice) rather than the presigned URL, which expires shortly after it is issued.
+
+                '
+              examples:
+              - 64f0c2a1e4b0a1b2c3d4e5f6/invoice.pdf
+            expiresIn:
+              type: integer
+              description: 'Number of seconds the presigned URL remains valid for the upload. Complete the PUT upload within this window; afterwards, request a fresh URL.
+
+                '
+              examples:
+              - 300
+    MediaURLRequest:
+      type: object
+      required:
+      - fileName
+      properties:
+        fileName:
+          type: string
+          description: The name of the file to upload.
+          examples:
+          - document.pdf
+        type:
+          type: string
+          enum:
+          - transaction
+          - user
+          description: 'The category of the file being uploaded. Use `transaction` for transaction-related files (e.g. a transactions CSV) and `user` for user identity documents. Defaults to `user` when omitted.
+
+            '
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Static business API key issued from the dashboard. A business can provision **multiple API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions, create deposits, etc). Permissions are chosen per key at creation time in the dashboard and may be revoked by deleting the key. Requests made with a key that does not include the permission required by the target endpoint is rejected with a `401 Unauthorized` response, the same response an unrecognised, malformed or revoked key returns. The API does not distinguish the two cases on the wire. Manage your keys and their permissions under **Developer → API keys** in the dashboard.

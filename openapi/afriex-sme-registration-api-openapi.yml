@@ -1,0 +1,230 @@
+openapi: 3.2.0
+info:
+  title: Afriex Business SME Registration API
+  version: 1.0.13
+  description: 'Welcome to the Afriex Business API. This API allows you to manage customers, process payments, handle payouts, and receive real-time notifications via webhooks.
+
+
+    For detailed guidance on authentication, pagination, error handling, and webhooks, please refer to the dedicated guides in the top bar. The guide provides a step-by-step instructions to help you integrate seamlessly.'
+  termsOfService: https://www.afriex.com/terms-and-condition
+  contact:
+    name: Afriex API Support
+    email: support@afriex.com
+    url: https://docs.afriex.com
+  license:
+    name: Proprietary
+    url: https://www.afriex.com/terms-and-condition
+servers:
+- url: https://sandbox.api.afriex.com
+  description: Staging Base URL
+- url: https://api.afriex.com
+  description: Production Base URL
+security:
+- ApiKey: []
+tags:
+- name: SME Registration
+paths:
+  /api/v1/sme-registration:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: smeRegistration
+      summary: Register a business as an SME (step-based)
+      description: 'Registers a business as its own SME so that dedicated virtual accounts are issued under the business''s own legal entity rather than the shared default. The flow is stateful and driven by this single endpoint: the `step` field selects the payload carried in `data`. Call the steps in order — `INITIATE` (triggers a one-time passcode to the supplied mobile number), `CONFIRM_OTP`, then `SUBMIT` (company details, directors and documents). Upload each document first via `POST /api/v1/media/url` and pass the returned object keys in the `SUBMIT` payload. Requires an API key with admin permission.'
+      tags:
+      - SME Registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - step
+              - data
+              properties:
+                step:
+                  type: string
+                  enum:
+                  - INITIATE
+                  - CONFIRM_OTP
+                  - SUBMIT
+                  description: Selects the payload shape carried in `data`.
+                data:
+                  type: object
+                  description: 'Step-specific payload. `INITIATE`: `mobile`, `email`, `businessType` (must be `2` — only Limited Liability Companies are supported at this time). `CONFIRM_OTP`: `onboardingRequestId`, `otp`. `SUBMIT`: company details, `directors[]`, and optional `organizationShareholders[]` / `media[]`, where every file field is an object key returned by `POST /api/v1/media/url`.
+
+
+                    Every mobile number (the applicant''s on `INITIATE` and each director''s on `SUBMIT`) must be a valid Kenyan number. Any of `254712345678`, `+254712345678`, `0712345678` or `712345678` is accepted and normalised to E.164; a number that is not Kenyan is rejected with `422`. Directors do not need a `countryCode`: it is derived from the number, and ignored if sent.'
+            examples:
+              initiate:
+                summary: Step 1 — initiate and trigger the OTP
+                value:
+                  step: INITIATE
+                  data:
+                    mobile: '254712345678'
+                    email: admin@company.co.ke
+                    businessType: 2
+              confirm-otp:
+                summary: Step 2 — confirm the OTP
+                value:
+                  step: CONFIRM_OTP
+                  data:
+                    onboardingRequestId: obr-12345
+                    otp: '483921'
+      responses:
+        '200':
+          description: Step processed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      onboardingRequestId:
+                        type: string
+                      step:
+                        type: string
+                        enum:
+                        - INITIATE
+                        - CONFIRM_OTP
+                        - SUBMIT
+                      status:
+                        type: string
+                        enum:
+                        - OTP_PENDING
+                        - DETAILS_PENDING
+                        - SUBMITTED
+                        - REJECTED
+                        - EXPIRED
+                      nextStep:
+                        type: string
+                        nullable: true
+                        enum:
+                        - CONFIRM_OTP
+                        - SUBMIT
+                      expiresAt:
+                        type: string
+                        format: date-time
+                        description: Deadline for the current step — OTP window after INITIATE, submit window after CONFIRM_OTP.
+        '400':
+          description: A step called out of order, an expired OTP, or a duplicate active registration. Malformed field values return `422` instead.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request failed schema validation. `details.friendlyMessage` carries the specific field error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/sme-registration/status:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: smeRegistrationStatus
+      summary: Get SME registration status
+      description: Returns the most recent SME registration status for the authenticated business. Once the registration has been submitted, the response also includes the latest review outcome. Requires an API key with admin permission.
+      tags:
+      - SME Registration
+      responses:
+        '200':
+          description: Current SME registration status.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      onboardingRequestId:
+                        type: string
+                        nullable: true
+                        description: Null when the business has never registered.
+                      status:
+                        type: string
+                        nullable: true
+                        enum:
+                        - OTP_PENDING
+                        - DETAILS_PENDING
+                        - SUBMITTED
+                        - REJECTED
+                        - EXPIRED
+                      reviewStatus:
+                        type: string
+                        description: Public review outcome, present only once the registration has been submitted. `APPROVED` means the business's dedicated KES virtual accounts can be issued under its own entity; `UNKNOWN` is a forward-compatibility slot for any provider code Afriex has not mapped yet. The set may grow over time; handle unknown values by falling back to `UNKNOWN`.
+                        enum:
+                        - SUBMITTED
+                        - PROCESSING
+                        - APPROVED
+                        - REJECTED
+                        - CLOSED
+                        - UNDER_REVIEW
+                        - UNKNOWN
+                      rejectReasons:
+                        type: array
+                        nullable: true
+                        items:
+                          type: string
+                      isReviewStatusStale:
+                        type: boolean
+                        description: True when Afriex could not reach the provider for a fresh review outcome on this read, so `reviewStatus` reflects the last known value (or `UNKNOWN` if none is cached) rather than the current one. Absent when the read succeeded.
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Static business API key issued from the dashboard. A business can provision **multiple API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions, create deposits, etc). Permissions are chosen per key at creation time in the dashboard and may be revoked by deleting the key. Requests made with a key that does not include the permission required by the target endpoint is rejected with a `401 Unauthorized` response, the same response an unrecognised, malformed or revoked key returns. The API does not distinguish the two cases on the wire. Manage your keys and their permissions under **Developer → API keys** in the dashboard.

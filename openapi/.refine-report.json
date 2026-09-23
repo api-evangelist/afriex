@@ -1,0 +1,37 @@
+{
+  "provider": "afriex",
+  "sources": [
+    "_original/afriex-business-openapi-original.json"
+  ],
+  "outputs": [
+    "afriex-balance-api-openapi.yml",
+    "afriex-checkout-sessions-api-openapi.yml",
+    "afriex-customers-api-openapi.yml",
+    "afriex-media-api-openapi.yml",
+    "afriex-payment-methods-api-openapi.yml",
+    "afriex-rates-api-openapi.yml",
+    "afriex-sme-registration-api-openapi.yml",
+    "afriex-transactions-api-openapi.yml",
+    "afriex-webhooks-api-openapi.yml"
+  ],
+  "archived": [],
+  "errors": [],
+  "warnings": [],
+  "notes": [
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
+    "afriex-business-openapi-original.json: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
+    "afriex-business-openapi-original.json: declared missing tag: SME Registration",
+    "apis.yml register: already-registered"
+  ],
+  "skipped": [
+    "afriex-balance-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "afriex-checkout-sessions-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "afriex-customers-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "afriex-media-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "afriex-payment-methods-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "afriex-rates-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "afriex-sme-registration-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "afriex-transactions-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "afriex-webhooks-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
+}

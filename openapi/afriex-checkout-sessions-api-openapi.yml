@@ -1,0 +1,298 @@
+openapi: 3.2.0
+info:
+  title: Afriex Business Checkout Sessions API
+  version: 1.0.13
+  description: 'Welcome to the Afriex Business API. This API allows you to manage customers, process payments, handle payouts, and receive real-time notifications via webhooks.
+
+
+    For detailed guidance on authentication, pagination, error handling, and webhooks, please refer to the dedicated guides in the top bar. The guide provides a step-by-step instructions to help you integrate seamlessly.'
+  termsOfService: https://www.afriex.com/terms-and-condition
+  contact:
+    name: Afriex API Support
+    email: support@afriex.com
+    url: https://docs.afriex.com
+  license:
+    name: Proprietary
+    url: https://www.afriex.com/terms-and-condition
+servers:
+- url: https://sandbox.api.afriex.com
+  description: Staging Base URL
+- url: https://api.afriex.com
+  description: Production Base URL
+security:
+- ApiKey: []
+tags:
+- name: Checkout Sessions
+  description: Create hosted checkout sessions.
+paths:
+  /api/v1/checkout-session:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: createCheckoutSession
+      summary: Create a checkout session
+      description: 'Creates a hosted checkout session for a customer and returns a `checkoutUrl` that the customer should be redirected to in order to complete payment. The session captures the merchant intent (amount, currency, merchant reference, customer details, and allowed payment channels) and is identified end-to-end by the merchant-supplied `merchantReference`.
+
+
+        **Every `/api/v1/checkout-session` route is only available in the sandbox/staging environment and returns a `403 Forbidden` response in production.** You can build and test the full flow against sandbox today; production access is enabled separately once checkout is signed off.'
+      tags:
+      - Checkout Sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - amount
+              - currency
+              - merchantReference
+              - redirectUrl
+              - customer
+              - channels
+              properties:
+                amount:
+                  type: integer
+                  minimum: 100
+                  description: The transaction amount in **minor currency units** (e.g. kobo for NGN, cents for USD). Minimum 100 (equivalent to 1 major currency unit).
+                  examples:
+                  - 500000
+                currency:
+                  type: string
+                  description: Uppercase 3-letter ISO 4217 currency code (e.g. NGN, GHS). Must be a currency enabled for checkout sessions on the business.
+                  examples:
+                  - NGN
+                merchantReference:
+                  type: string
+                  minLength: 1
+                  description: Unique merchant-supplied reference for this session. Used end-to-end to look up the session and any resulting transaction.
+                  examples:
+                  - order-2026-05-12-001
+                redirectUrl:
+                  type: string
+                  format: uri
+                  description: HTTPS URL the customer is redirected to after the hosted checkout flow completes.
+                  examples:
+                  - https://merchant.example.com/checkout/return
+                customer:
+                  $ref: '#/components/schemas/CheckoutSessionCustomer'
+                channels:
+                  type: array
+                  minItems: 1
+                  description: 'The payment channels you are willing to offer the customer, at least one. **This is a cap, not an exact list: you do not need to vary it per country.** Channels the `currency` does not support are dropped and the session is created with the rest, so the same list works for every corridor (send `["VIRTUAL_BANK_ACCOUNT", "MOBILE_MONEY", "CARD"]` and a KES session offers mobile money while a USD one offers cards). The channels the customer will actually be shown come back as `channels` on the response. The request is rejected (`422`) only when none of the requested channels are supported for the currency, or when the currency supports no deposit channel at all.'
+                  items:
+                    type: string
+                    enum:
+                    - VIRTUAL_BANK_ACCOUNT
+                    - MOBILE_MONEY
+                    - CARD
+                metadata:
+                  type: object
+                  maxProperties: 50
+                  description: Optional flat key/value metadata to attach to the session. Both keys and values must be strings. At most 50 entries; keys up to 128 characters, values up to 1024 characters.
+                  additionalProperties:
+                    type: string
+                    maxLength: 1024
+            examples:
+              minimal:
+                summary: One channel list for every corridor
+                value:
+                  amount: 500000
+                  currency: NGN
+                  merchantReference: order-2026-05-12-001
+                  redirectUrl: https://merchant.example.com/checkout/return
+                  customer:
+                    name: John Doe
+                    email: john.doe@example.com
+                    phone: '+2348192837465'
+                    countryCode: NG
+                  channels:
+                  - VIRTUAL_BANK_ACCOUNT
+                  - MOBILE_MONEY
+                  - CARD
+              withChannelsAndMetadata:
+                summary: Narrowing to specific channels, plus metadata
+                value:
+                  amount: 500000
+                  currency: NGN
+                  merchantReference: order-2026-05-12-002
+                  redirectUrl: https://merchant.example.com/checkout/return
+                  customer:
+                    name: John Doe
+                    email: john.doe@example.com
+                    phone: '+2348192837465'
+                    countryCode: NG
+                  channels:
+                  - VIRTUAL_BANK_ACCOUNT
+                  - CARD
+                  metadata:
+                    orderId: '12345'
+                    source: web
+      responses:
+        '201':
+          description: Checkout session created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CreateCheckoutSessionResponse'
+              examples:
+                created:
+                  summary: Session created
+                  value:
+                    data:
+                      checkoutUrl: https://pay.afriex.com/pay/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+                      channels:
+                      - VIRTUAL_BANK_ACCOUNT
+                      - CARD
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - This endpoint is not available in the production environment.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                    - Not allowed
+              examples:
+                productionForbidden:
+                  summary: Endpoint disabled in production
+                  value:
+                    message: Not allowed
+        '422':
+          description: None of the requested `channels` are supported for the `currency`, or the currency has no deposit channel available at all.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const session = await afriex.checkout.createSession({\n  amount: 500000,\n  currency: \"NGN\",\n  merchantReference: \"order-2026-05-12-001\",\n  redirectUrl: \"https://yourapp.com/checkout/return\",\n  customer: {\n    name: \"John Doe\",\n    email: \"john@example.com\",\n    phone: \"+2348192837465\",\n    countryCode: \"NG\",\n  },\n  // Send the same list everywhere; unsupported ones are dropped\n  channels: [\"VIRTUAL_BANK_ACCOUNT\", \"MOBILE_MONEY\", \"CARD\"],\n  metadata: { orderId: \"order-456\", cartId: \"cart-123\" },\n});\n\n// Redirect customer to session.checkoutUrl\nconsole.log(session.checkoutUrl);\n// What the payer will be shown, e.g. [\"VIRTUAL_BANK_ACCOUNT\", \"CARD\"]\nconsole.log(session.channels);\n"
+components:
+  schemas:
+    CreateCheckoutSessionResponse:
+      type: object
+      properties:
+        checkoutUrl:
+          type: string
+          format: uri
+          description: The URL the customer should be redirected to in order to complete the hosted checkout flow.
+          examples:
+          - https://pay.afriex.com/pay/eyJhbGciOiJI...
+        channels:
+          type: array
+          description: 'The payment channels the customer will actually be offered on the checkout page: the request''s `channels`, in the order you sent them, minus any the currency cannot collect on. Never empty.'
+          items:
+            type: string
+            enum:
+            - VIRTUAL_BANK_ACCOUNT
+            - MOBILE_MONEY
+            - CARD
+          examples:
+          - - MOBILE_MONEY
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    CheckoutSessionCustomer:
+      type: object
+      required:
+      - name
+      - email
+      - phone
+      - countryCode
+      properties:
+        name:
+          type: string
+          description: The full name of the customer.
+          examples:
+          - John Doe
+        email:
+          type: string
+          format: email
+          description: The email address of the customer.
+          examples:
+          - john.doe@example.com
+        phone:
+          type: string
+          description: The phone number of the customer in E.164 format.
+          examples:
+          - '+2348192837465'
+        countryCode:
+          type: string
+          description: The ISO 3166-1 alpha-2 country code of the customer (e.g., 'NG', 'GH'). Case-insensitive; values are normalized to uppercase.
+          examples:
+          - NG
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Static business API key issued from the dashboard. A business can provision **multiple API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions, create deposits, etc). Permissions are chosen per key at creation time in the dashboard and may be revoked by deleting the key. Requests made with a key that does not include the permission required by the target endpoint is rejected with a `401 Unauthorized` response, the same response an unrecognised, malformed or revoked key returns. The API does not distinguish the two cases on the wire. Manage your keys and their permissions under **Developer → API keys** in the dashboard.

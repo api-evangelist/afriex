@@ -1,0 +1,2132 @@
+openapi: 3.2.0
+info:
+  title: Afriex Business Payment Methods API
+  version: 1.0.13
+  description: 'Welcome to the Afriex Business API. This API allows you to manage customers, process payments, handle payouts, and receive real-time notifications via webhooks.
+
+
+    For detailed guidance on authentication, pagination, error handling, and webhooks, please refer to the dedicated guides in the top bar. The guide provides a step-by-step instructions to help you integrate seamlessly.'
+  termsOfService: https://www.afriex.com/terms-and-condition
+  contact:
+    name: Afriex API Support
+    email: support@afriex.com
+    url: https://docs.afriex.com
+  license:
+    name: Proprietary
+    url: https://www.afriex.com/terms-and-condition
+servers:
+- url: https://sandbox.api.afriex.com
+  description: Staging Base URL
+- url: https://api.afriex.com
+  description: Production Base URL
+security:
+- ApiKey: []
+tags:
+- name: Payment Methods
+  description: Register and resolve customer payout and collection methods.
+paths:
+  /api/v1/payment-method:
+    parameters:
+    - $ref: '#/components/parameters/x-api-signature'
+    - $ref: '#/components/parameters/x-api-version'
+    post:
+      operationId: createPaymentMethod
+      summary: Create a payment method
+      description: Creates a new payment method.
+      tags:
+      - Payment Methods
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - channel
+              - accountName
+              - accountNumber
+              - countryCode
+              - institution
+              properties:
+                channel:
+                  type: string
+                  description: The payment method channel
+                  enum:
+                  - BANK_ACCOUNT
+                  - MOBILE_MONEY
+                  - VIRTUAL_BANK_ACCOUNT
+                  - ACH_BANK_ACCOUNT
+                  - INTERAC
+                  - UPI
+                  - SWIFT
+                  - WE_CHAT
+                customerId:
+                  description: Optional. The customer to attach this payment method to. When omitted, it is attached to the business owner.
+                  $ref: '#/components/schemas/customerId'
+                type:
+                  type: string
+                  description: 'The capability of this payment method. DEPOSIT means funds can be pulled from this method (e.g. charge/collect from the customer). WITHDRAW means funds can be sent to this method (e.g. pay out to the customer). If omitted, defaults to WITHDRAW.
+
+                    '
+                  enum:
+                  - DEPOSIT
+                  - WITHDRAW
+                accountName:
+                  type: string
+                  description: 'The name of the account holder. Must use Latin-script letters (A-Z / a-z, including accented forms such as é, ñ, ü, ç) or Chinese (Han) characters, digits (0-9), spaces and the characters & ( ) + , - . / : ? and apostrophe; it must contain at least one letter. Names in other scripts (e.g. Arabic, Cyrillic) or containing other symbols are rejected. Exception: China-facing payouts on the `WE_CHAT` channel (which carries both WeChat and Alipay) accept the beneficiary''s local-script (e.g. Chinese) name.'
+                accountNumber:
+                  type: string
+                  description: The account number
+                countryCode:
+                  type: string
+                  description: The ISO 3166-1 alpha-2 country code. This has to be one of the countries we support
+                institution:
+                  description: The destination institution. For USD (SWIFT) payout payment methods, correspondentBankName and correspondentBankAccountNumber are mandatory.
+                  $ref: '#/components/schemas/PaymentMethodInstitution'
+                recipient:
+                  $ref: '#/components/schemas/PaymentMethodRecipient'
+                transaction:
+                  $ref: '#/components/schemas/PaymentMethodTransaction'
+            examples:
+              Bank Account:
+                summary: Bank Account, register a bank account to send funds to
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: WITHDRAW
+                  channel: BANK_ACCOUNT
+                  accountName: John Doe
+                  accountNumber: 0123456789
+                  countryCode: NG
+                  institution:
+                    institutionCode: 058
+                    institutionName: GTBank
+              SWIFT Transfer:
+                summary: SWIFT, register an international bank account via SWIFT
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: WITHDRAW
+                  channel: SWIFT
+                  accountName: John Doe
+                  accountNumber: DE89370400440532013000
+                  countryCode: DE
+                  institution:
+                    institutionCode: DEUTDEDB
+                    institutionName: Deutsche Bank
+                    institutionAddress: Taunusanlage 12, 60262 Frankfurt am Main, Germany
+                    correspondentBankName: Citibank N.A. New York
+                    correspondentBankAccountNumber: '10991234'
+                  recipient:
+                    recipientAddress: Musterstraße 1, 10115 Berlin, Germany
+                  transaction:
+                    transactionNarration: Payment for services
+              Mobile Money:
+                summary: Mobile Money, register a mobile money account to send funds to
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: WITHDRAW
+                  channel: MOBILE_MONEY
+                  accountName: John Doe
+                  accountNumber: '0201234567'
+                  countryCode: GH
+                  institution:
+                    institutionCode: MTN
+                    institutionName: MTN
+              Mobile Money (Deposit):
+                summary: Mobile Money, register a mobile money account to pull funds from
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: DEPOSIT
+                  channel: MOBILE_MONEY
+                  accountName: John Doe
+                  accountNumber: '0201234567'
+                  countryCode: GH
+                  institution:
+                    institutionCode: MTN
+                    institutionName: MTN
+              UPI:
+                summary: UPI, register a UPI ID to send funds to (India)
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: WITHDRAW
+                  channel: UPI
+                  accountName: Raj Kumar
+                  accountNumber: rajkumar@upi
+                  countryCode: IN
+                  institution:
+                    institutionCode: UPI
+                    institutionName: UPI
+                  recipient:
+                    recipientPhone: '+919876543210'
+              Interac:
+                summary: Interac, register an Interac e-Transfer recipient (Canada)
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: WITHDRAW
+                  channel: INTERAC
+                  accountName: John Doe
+                  accountNumber: john.doe@email.com
+                  countryCode: CA
+                  institution:
+                    institutionCode: INTERAC
+                    institutionName: INTERAC
+                  recipient:
+                    recipientEmail: john.doe@email.com
+              WeChat Pay:
+                summary: WeChat Pay, register a WeChat Pay account to send funds to (China)
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: WITHDRAW
+                  channel: WE_CHAT
+                  accountName: Zhang Wei
+                  accountNumber: '+8613812345678'
+                  countryCode: CN
+                  institution:
+                    institutionCode: WECHAT
+                    institutionName: WECHAT
+                  recipient:
+                    recipientPhone: '+8613812345678'
+              Alipay:
+                summary: Alipay, register an Alipay account to send funds to (China). Alipay is routed over the WE_CHAT channel with institutionName ALIPAY; there is no separate ALIPAY channel.
+                value:
+                  customerId: 69528240ba52c13b669fb239
+                  type: WITHDRAW
+                  channel: WE_CHAT
+                  accountName: Zhang Wei
+                  accountNumber: '+8613812345678'
+                  countryCode: CN
+                  institution:
+                    institutionCode: ALIPAY
+                    institutionName: ALIPAY
+                  recipient:
+                    recipientPhone: '+8613812345678'
+      responses:
+        '201':
+          description: Payment method created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PaymentMethod'
+              examples:
+                bankAccount:
+                  summary: Bank account payment method created
+                  value:
+                    data:
+                      paymentMethodId: 69d6002579101baa20f63816
+                      channel: BANK_ACCOUNT
+                      customerId: 69d60024ab82306f11b03325
+                      institution:
+                        institutionCode: '000013'
+                        institutionName: GTBank
+                      accountName: John Doe
+                      accountNumber: 0123456789
+                      countryCode: NG
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingRequiredField:
+                  summary: Missing required field
+                  value:
+                    code: INVALID_USER_DATA
+                    error: Invalid user data
+                    details:
+                      errorMessage: Invalid user data
+                      friendlyMessage: ''
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const paymentMethod = await afriex.paymentMethods.create({\n  channel: \"BANK_ACCOUNT\",\n  customerId: \"customer-id\",\n  accountName: \"John Doe\",\n  accountNumber: \"1234567890\",\n  countryCode: \"NG\",\n  institution: {\n    institutionCode: \"044\",\n    institutionName: \"Access Bank\",\n  },\n});\n"
+    get:
+      operationId: listPaymentMethods
+      summary: Get payment method list
+      description: Retrieves a paginated list of payment methods.
+      tags:
+      - Payment Methods
+      parameters:
+      - name: page
+        in: query
+        description: Page number for pagination (starting from 0)
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        description: Number of items per page
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      - name: channel
+        in: query
+        description: Filter by one or more payment channels. Use a comma-separated list for multiple values (e.g. `?channel=BANK_ACCOUNT,MOBILE_MONEY`).
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - BANK_ACCOUNT
+            - MOBILE_MONEY
+            - INTERAC
+            - UPI
+            - WE_CHAT
+            - VIRTUAL_BANK_ACCOUNT
+            - RFP
+            - SWIFT
+        style: form
+        explode: false
+      - name: currencies
+        in: query
+        description: Filter by one or more 3-letter ISO 4217 currency codes. Use a comma-separated list for multiple values (e.g. `?currencies=USD,NGN`).
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: false
+      - name: capabilities
+        in: query
+        description: Filter by payment method capability. Only `WITHDRAW` is currently supported. Defaults to `WITHDRAW` when omitted.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - WITHDRAW
+          default:
+          - WITHDRAW
+        style: form
+        explode: false
+      - name: status
+        in: query
+        description: Filter by one or more payment method statuses. Defaults to `active,pending` when omitted.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - active
+            - pending
+          default:
+          - active
+          - pending
+        style: form
+        explode: false
+      responses:
+        '200':
+          description: List of payment methods retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentMethod'
+                  page:
+                    type: integer
+                    description: Current page number
+                  total:
+                    type: integer
+                    description: Total number of payment methods matching the query
+              examples:
+                success:
+                  summary: Payment method list retrieved
+                  value:
+                    data:
+                    - paymentMethodId: 6936b8774f987b2994865b73
+                      channel: BANK_ACCOUNT
+                      customerId: 6922e4520a53e858ab42efa8
+                      institution:
+                        institutionCode: '000013'
+                        institutionName: GTBank
+                      accountName: John Doe
+                      accountNumber: '1234567890'
+                      countryCode: NG
+                    - paymentMethodId: 6936b8e54f987b2994865b8b
+                      channel: BANK_ACCOUNT
+                      customerId: 6928515c6befd180bc451622
+                      institution:
+                        institutionCode: '000017'
+                        institutionName: WEMA BANK
+                      accountName: Test Account
+                      accountNumber: '1213131313'
+                      countryCode: NG
+                    total: 1006
+                    page: 0
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '422':
+          description: Request failed schema validation. `details.friendlyMessage` carries the specific field error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: Validation error
+                    details:
+                      errorMessage: Validation error
+                      friendlyMessage: '''page'' must be a number'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const response = await afriex.paymentMethods.list({\n  page: 1,\n  limit: 20,\n});\n"
+  /api/v1/payment-method/{paymentMethodId}:
+    parameters:
+    - $ref: '#/components/parameters/x-api-signature'
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: getPaymentMethod
+      summary: Get payment method by ID
+      description: Retrieves a specific payment method by its unique identifier.
+      tags:
+      - Payment Methods
+      parameters:
+      - name: paymentMethodId
+        in: path
+        description: The unique identifier of the payment method
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Payment method retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PaymentMethod'
+              examples:
+                success:
+                  summary: Payment method retrieved
+                  value:
+                    data:
+                      paymentMethodId: 6936b8774f987b2994865b73
+                      channel: BANK_ACCOUNT
+                      customerId: 6922e4520a53e858ab42efa8
+                      institution:
+                        institutionCode: '000013'
+                        institutionName: GTBank
+                      accountName: John Doe
+                      accountNumber: '1234567890'
+                      countryCode: NG
+        '400':
+          description: Request error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''paymentMethodId'' must be a string'
+                    details: {}
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Payment method not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Payment method not found
+                  value:
+                    code: BUSINESS_PAYMENT_METHOD_NOT_FOUND
+                    error: Business payment method not found
+                    details:
+                      errorMessage: Business payment method not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: 'const paymentMethod = await afriex.paymentMethods.get("payment-method-id");
+
+          '
+    delete:
+      operationId: deletePaymentMethod
+      summary: Delete payment method
+      description: Removes a payment method from the system.
+      tags:
+      - Payment Methods
+      parameters:
+      - name: paymentMethodId
+        in: path
+        description: The unique identifier of the payment method
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Payment method deleted successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                success:
+                  summary: Payment method deleted
+                  value: {}
+        '400':
+          description: Request error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''paymentMethodId'' must be a string'
+                    details: {}
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Payment method not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Payment method not found
+                  value:
+                    code: BUSINESS_PAYMENT_METHOD_NOT_FOUND
+                    error: Business payment method not found
+                    details:
+                      errorMessage: Business payment method not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: 'await afriex.paymentMethods.delete("payment-method-id");
+
+          '
+  /api/v1/payment-method/institution:
+    parameters:
+    - $ref: '#/components/parameters/x-api-signature'
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: listInstitutions
+      summary: Get list of payment method institutions by country
+      description: Retrieves a list of banks or mobile money providers available for a specific country.
+      tags:
+      - Payment Methods
+      parameters:
+      - name: channel
+        in: query
+        description: The payment method channel. Institution lookup is only implemented for these three channels; any other channel returns `400 INVALID_TRANSACTION_CHANNEL`.
+        required: true
+        schema:
+          type: string
+          enum:
+          - BANK_ACCOUNT
+          - SWIFT
+          - MOBILE_MONEY
+      - name: countryCode
+        in: query
+        description: The ISO 3166-1 alpha-2 country code
+        required: true
+        schema:
+          type: string
+          enum:
+          - US
+          - NG
+          - GB
+          - DE
+          - FR
+          - CA
+          - ZA
+          - GH
+          - KE
+          - UG
+          - TZ
+          - RW
+          - CM
+          - CG
+          - GA
+          - CF
+          - CI
+          - BF
+          - ML
+          - SN
+          - TG
+          - BJ
+          - NE
+          - GN
+          - ZM
+          - ET
+          - MW
+          - MZ
+          - BW
+          - SL
+          - LR
+          - GM
+          - GW
+          - CV
+          - ST
+          - AO
+          - KM
+          - DJ
+          - SO
+          - SC
+          - MU
+          - SZ
+          - LS
+      responses:
+        '200':
+          description: List of banks or mobile money providers retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentMethodInstitution'
+                  page:
+                    type: integer
+                    description: Current page number
+                  total:
+                    type: integer
+                    description: Total number of items available
+              examples:
+                nigeriaBanks:
+                  summary: Nigerian bank accounts
+                  value:
+                    data:
+                    - institutionName: Guaranty Trust Bank (GTBank) Plc
+                      institutionCode: '000013'
+                      institutionBranch: ''
+                      institutionAddress: ''
+                    - institutionName: Zenith Bank
+                      institutionCode: '000015'
+                      institutionBranch: ''
+                      institutionAddress: ''
+                    - institutionName: Wema Bank
+                      institutionCode: '000017'
+                      institutionBranch: ''
+                      institutionAddress: ''
+                    total: 38
+                    page: 0
+                ghanaMobileMoney:
+                  summary: Ghana mobile money providers
+                  value:
+                    data:
+                    - institutionName: MTN
+                      institutionCode: MTN
+                    - institutionName: TIGO
+                      institutionCode: TIGO
+                    - institutionName: AIRTEL
+                      institutionCode: AIRTEL
+                    total: 4
+                    page: 0
+        '400':
+          description: Invalid request parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingParams:
+                  summary: Missing required query parameters
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''countryCode'' is required, ''channel'' is required'
+                    details: {}
+                invalidChannel:
+                  summary: Invalid channel value
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''channel'' must be one of [BANK_ACCOUNT, MOBILE_MONEY, SWIFT, ...]'
+                    details: {}
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const institutions = await afriex.paymentMethods.getInstitutions({\n  channel: \"BANK_ACCOUNT\",\n  countryCode: \"NG\",\n});\n\n// Returns: Institution[], { institutionId, institutionName, institutionCode }\n"
+  /api/v1/payment-method/institution/codes:
+    parameters:
+    - $ref: '#/components/parameters/x-api-signature'
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: resolveInstitutionCode
+      summary: Resolve bank code to institution name
+      description: Resolves a bank code (SWIFT code or US routing number) to the corresponding bank or institution name.
+      tags:
+      - Payment Methods
+      parameters:
+      - name: searchTerm
+        in: query
+        description: The bank code to resolve. A US routing number (8-9 digits) when codeType is routing_number, otherwise a SWIFT code.
+        required: true
+        schema:
+          type: string
+      - name: country
+        in: query
+        description: ISO country code of the institution. Defaults to US. routing_number lookups are only supported for US; all other countries use swift_code.
+        required: true
+        schema:
+          type: string
+          default: US
+      - name: codeType
+        in: query
+        description: The type of bank code. routing_number is only valid when country is US; for every other country only swift_code is accepted.
+        required: true
+        schema:
+          type: string
+          enum:
+          - swift_code
+          - routing_number
+      responses:
+        '200':
+          description: Bank code resolved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BankCodeResolverResponse'
+              examples:
+                routingNumberFound:
+                  summary: Routing number resolved
+                  value:
+                    data:
+                      bankName: JPMORGAN CHASE BANK
+                notFound:
+                  summary: Bank code not found
+                  value:
+                    data: null
+        '400':
+          description: Invalid request parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingParams:
+                  summary: Missing required parameters
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''country'' is required, ''codeType'' is required, ''searchTerm'' is required'
+                    details: {}
+                invalidFormat:
+                  summary: Invalid routing number format
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: US routing number must be between 8 and 9 digits'
+                    details: {}
+                swiftCountryMismatch:
+                  summary: SWIFT code country mismatch
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: SWIFT code country DE does not match input US'
+                    details: {}
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+  /api/v1/payment-method/resolve:
+    parameters:
+    - $ref: '#/components/parameters/x-api-signature'
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: resolveRecipient
+      summary: Resolve payment method recipient by account number
+      description: Resolves payment method user information for bank accounts or mobile money.
+      tags:
+      - Payment Methods
+      parameters:
+      - name: channel
+        in: query
+        description: The payment method channel to resolve
+        required: true
+        schema:
+          type: string
+          enum:
+          - MOBILE_MONEY
+          - BANK_ACCOUNT
+      - name: accountNumber
+        in: query
+        description: Bank account number (required for BANK_ACCOUNT channel) or phone number (required for MOBILE_MONEY channel)
+        required: false
+        schema:
+          type: string
+      - name: institutionCode
+        in: query
+        description: Bank code (required for BANK_ACCOUNT channel)
+        required: false
+        schema:
+          type: string
+      - name: countryCode
+        in: query
+        description: 'The ISO 3166-1 alpha-2 country code. The accepted values depend on channel: BANK_ACCOUNT supports only NG and GH; MOBILE_MONEY supports the remaining countries listed in the enum.'
+        required: true
+        schema:
+          type: string
+          enum:
+          - NG
+          - GH
+          - ET
+          - KE
+          - MG
+          - MW
+          - MZ
+          - RW
+          - TZ
+          - UG
+          - CM
+          - CG
+          - GA
+          - CF
+          - CI
+          - BF
+          - ML
+          - SN
+          - TG
+          - BJ
+          - NE
+          - GN
+          - ZM
+      responses:
+        '200':
+          description: Payment method resolved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PaymentMethodResolveResponse'
+              examples:
+                bankAccountResolved:
+                  summary: Bank account resolved
+                  value:
+                    data:
+                      recipientName: John Doe
+                      institutionName: GUARANTY TRUST BANK
+                      institutionCode: '000013'
+                mobileMoneyResolved:
+                  summary: Mobile money account resolved
+                  value:
+                    data:
+                      recipientName: John Doe
+                      institutionName: MTN
+                      institutionCode: MTN
+        '400':
+          description: Invalid request parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingParams:
+                  summary: Missing required parameters
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''accountNumber'' is required, ''institutionCode'' is required, ''countryCode'' is required'
+                    details: {}
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '404':
+          description: Payment method not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Account not found
+                  value:
+                    code: PAYMENT_METHOD_NOT_FOUND
+                    error: Payment method not found
+                    details:
+                      errorMessage: Payment method not found
+                      friendlyMessage: ''
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const accountInfo = await afriex.paymentMethods.resolveAccount({\n  channel: \"BANK_ACCOUNT\",\n  accountNumber: \"1234567890\",\n  institutionCode: \"044\",\n  countryCode: \"NG\",\n});\n\n// Returns: { recipientName, recipientEmail, recipientPhone }\n"
+  /api/v1/payment-method/crypto-wallet:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: getCryptoWallet
+      summary: Get or create crypto wallet payment method
+      description: Retrieves an existing crypto wallet or creates a new one for the specified crypto asset. **Important:** This endpoint is **only active in production** and does **not work on staging/dev**. Supports idempotency to prevent duplicate wallet creation. Currently supports USDT and USDC assets. Send a GET request with the required `asset` parameter (and optional `customerId`). The system will either return existing wallet addresses or automatically create and return new ones if none exist for that asset/customer (or business if no customerId is provided).
+      tags:
+      - Payment Methods
+      parameters:
+      - name: asset
+        in: query
+        description: The crypto asset symbol for the wallet
+        required: true
+        schema:
+          type: string
+          enum:
+          - USDT
+          - USDC
+      - name: customerId
+        in: query
+        description: Optional customer ID. If not provided, the wallet will be created for the business.
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Crypto wallet addresses retrieved or created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: The identifier of the payment method backing this crypto wallet.
+                        examples:
+                        - 695271a3ba52c13b669fad2b
+                      addresses:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            address:
+                              type: string
+                              examples:
+                              - '0x1234567890abcdef1234567890abcdef12345678'
+                            network:
+                              type: string
+                              examples:
+                              - ETHEREUM_MAINNET
+              examples:
+                usdtWallet:
+                  summary: USDT wallet addresses
+                  value:
+                    data:
+                      id: 695271a3ba52c13b669fad2b
+                      addresses:
+                      - address: '0x1234567890123456789012345678901234567890'
+                        network: ETHEREUM_MAINNET
+                      - address: TYASr5UV6HEcXatwdFQfmLVUqQQQMUxHLS
+                        network: TRON_MAINNET
+                usdcWallet:
+                  summary: USDC wallet addresses
+                  value:
+                    data:
+                      id: 695271a3ba52c13b669fad2c
+                      addresses:
+                      - address: '0xabcdef1234567890abcdef1234567890abcdef12'
+                        network: ETHEREUM_MAINNET
+        '400':
+          description: Invalid request parameters (e.g., invalid asset, user not verified, or service not available).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingAsset:
+                  summary: Missing asset parameter
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''asset'' is required'
+                    details: {}
+                invalidAsset:
+                  summary: Unsupported asset (only USDT and USDC are supported)
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''asset'' must be one of [USDT, USDC]'
+                    details: {}
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const response = await afriex.paymentMethods.getCryptoWallet({\n  asset: \"USDT\", // or 'USDC'\n  customerId: \"optional-customer-id\",\n});\n\n// Returns: { data: [{ address, network }], total, page }\n"
+  /api/v1/payment-method/virtual-account:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: listVirtualAccounts
+      summary: List existing virtual accounts
+      description: 'Returns every active virtual account for the resolved
+
+        customer-or-owner and currency. Read-only: when no virtual account
+
+        exists, the response is **200** with `data: []`.
+
+
+        Pass `customerId` to scope the list to a specific end-user; omit it
+
+        to list the virtual accounts belonging to the business owner.
+
+
+        **Breaking change from earlier versions:** the previous endpoint
+
+        returned a single virtual account and would create one on the fly
+
+        when absent. It now returns a list and never creates. The create
+
+        path lives at `POST /api/v1/payment-method/virtual-account`; the
+
+        `POOL_ACCOUNT` variant has moved to
+
+        `GET /api/v1/payment-method/pool-account`.'
+      tags:
+      - Payment Methods
+      parameters:
+      - name: currency
+        in: query
+        description: The 3-letter ISO 4217 currency code for the virtual account
+        required: true
+        schema:
+          type: string
+          enum:
+          - USD
+          - NGN
+          - GBP
+          - EUR
+      - name: customerId
+        in: query
+        description: 'Optional customer ID. When supplied, the lookup is scoped to that
+
+          customer. When omitted, it resolves to the business owner.
+
+          '
+        required: false
+        schema:
+          type: string
+      - name: country
+        in: query
+        description: Optional ISO 3166-1 alpha-2 country code.
+        required: false
+        schema:
+          type: string
+      - name: amount
+        in: query
+        description: Optional positive amount.
+        required: false
+        schema:
+          type: number
+      - name: reference
+        in: query
+        description: Optional merchant-supplied reference.
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Virtual accounts retrieved successfully (possibly empty list).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentMethod'
+                  total:
+                    type: integer
+                    description: Number of items in `data`.
+                  page:
+                    type: integer
+                    description: Page index. Currently always `0`, the endpoint returns all matching VAs in a single response.
+              examples:
+                twoNgnAccounts:
+                  summary: Two NGN virtual accounts for a customer
+                  value:
+                    data:
+                    - paymentMethodId: 690cc5bbe2a1143ff6070119
+                      channel: VIRTUAL_BANK_ACCOUNT
+                      customerId: 68e6717848e1f632e9686460
+                      institution:
+                        institutionName: FIDELITY BANK
+                      accountName: Lily New
+                      accountNumber: '3820404958'
+                      countryCode: NG
+                    - paymentMethodId: 690cc5bbe2a1143ff607011a
+                      channel: VIRTUAL_BANK_ACCOUNT
+                      customerId: 68e6717848e1f632e9686460
+                      institution:
+                        institutionName: FIDELITY BANK
+                      accountName: Lily New (Sales)
+                      accountNumber: '3820404971'
+                      countryCode: NG
+                    total: 2
+                    page: 0
+                noAccounts:
+                  summary: No virtual accounts exist for this customer/currency
+                  value:
+                    data: []
+                    total: 0
+                    page: 0
+        '400':
+          description: Invalid request parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingCurrency:
+                  summary: Missing currency parameter
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''currency'' is required'
+                    details: {}
+                invalidCurrency:
+                  summary: Unsupported currency code
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''currency'' must be one of [USD, NGN, GBP, EUR]'
+                    details: {}
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const response = await afriex.paymentMethods.listVirtualAccounts({\n  customerId: \"customer-id\",\n  currency: \"USD\",\n});\n"
+    post:
+      operationId: createVirtualAccount
+      summary: Create a virtual account payment method
+      description: 'Creates a new virtual account for the resolved customer-or-owner and
+
+        currency. Pass `customerId` to mint the VA for a specific end-user;
+
+        omit it to mint one for the business owner.
+
+
+        **Customers are limited to `NGN`.** A virtual account for one of your
+
+        customers can only be created in `NGN`. Any other currency returns
+
+        `UNSUPPORTED_VIRTUAL_ACCOUNT_CURRENCY`; create it for the business
+
+        itself by omitting `customerId`.
+
+
+        Subject to a per-(business, customer, currency) limit. Requests that
+
+        would exceed the limit return `VIRTUAL_ACCOUNT_LIMIT_REACHED`.
+
+
+        **Compliance review:** every currency requires a compliance-approved
+
+        application before issuance. The first request for a not-yet-approved
+
+        business/currency starts that review and returns
+
+        `VIRTUAL_ACCOUNT_PENDING_COMPLIANCE_REVIEW`; retry once approved.
+
+
+        **Label vs amount:** `label` groups static virtual accounts by
+
+        purpose (e.g. `SALES`, `OPERATIONS`). It is **mutually exclusive
+
+        with `amount`**, which routes to a dynamic (ephemeral) virtual
+
+        account. Supplying both is rejected at validation.'
+      tags:
+      - Payment Methods
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - currency
+              properties:
+                currency:
+                  type: string
+                  description: The 3-letter ISO 4217 currency code for the virtual account.
+                  enum:
+                  - USD
+                  - NGN
+                  - GBP
+                  - EUR
+                customerId:
+                  type: string
+                  description: 'Optional customer ID. When supplied, the VA is created
+
+                    for that customer. When omitted, it is created for the
+
+                    business owner.
+
+                    '
+                amount:
+                  type: number
+                  description: 'Optional amount for a dynamic (ephemeral) virtual
+
+                    account. Mutually exclusive with `label`.
+
+                    '
+                  minimum: 0
+                  maximum: 5000000
+                label:
+                  type: string
+                  description: 'Optional label that groups static virtual accounts by
+
+                    purpose. Mutually exclusive with `amount`.
+
+                    '
+                  enum:
+                  - SALES
+                  - OPERATIONS
+                  - PAYROLL
+                  - COLLECTIONS
+                  - VENDOR_PAYMENTS
+                  - TAX
+                  - REFUNDS
+                  - MARKETING
+                  - TREASURY
+                  - GENERAL
+            examples:
+              staticWithLabel:
+                summary: Static virtual account grouped by label
+                value:
+                  currency: NGN
+                  customerId: 68e6717848e1f632e9686460
+                  label: SALES
+              dynamicWithAmount:
+                summary: Dynamic (ephemeral) virtual account tied to an amount
+                value:
+                  currency: NGN
+                  customerId: 68e6717848e1f632e9686460
+                  amount: 50000
+              businessOwner:
+                summary: Virtual account for the business owner (no customerId)
+                value:
+                  currency: USD
+                  label: TREASURY
+      responses:
+        '201':
+          description: Virtual account created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PaymentMethod'
+              examples:
+                ngnVirtualAccount:
+                  summary: NGN dedicated virtual bank account
+                  value:
+                    data:
+                      paymentMethodId: 690cc5bbe2a1143ff6070119
+                      channel: VIRTUAL_BANK_ACCOUNT
+                      customerId: 68e6717848e1f632e9686460
+                      institution:
+                        institutionName: FIDELITY BANK
+                      accountName: Lily New
+                      accountNumber: '3820404958'
+                      countryCode: NG
+        '400':
+          description: 'Invalid request (e.g. `label` and `amount` both supplied) or
+
+            virtual account limit reached.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                labelAndAmount:
+                  summary: Both label and amount supplied
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''label'' and ''amount'' are mutually exclusive'
+                    details: {}
+                limitReached:
+                  summary: Per-(business, customer, currency) cap reached
+                  value:
+                    code: VIRTUAL_ACCOUNT_LIMIT_REACHED
+                    error: Virtual account limit reached
+                    details:
+                      errorMessage: Virtual account limit reached
+                      friendlyMessage: You have reached the maximum number of virtual accounts for this customer and currency.
+                missingCurrency:
+                  summary: Missing currency
+                  value:
+                    code: VALIDATION_ERROR
+                    error: 'Failed to parse request. Issues: ''currency'' is required'
+                    details: {}
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '403':
+          description: 'The requested currency is not available to the resolved account
+
+            holder, or the business is still pending compliance review for
+
+            virtual account issuance.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                customerNonNgn:
+                  summary: Non-NGN virtual account requested for a customer
+                  value:
+                    code: UNSUPPORTED_VIRTUAL_ACCOUNT_CURRENCY
+                    error: Unsupported virtual account currency
+                    details:
+                      errorMessage: Unsupported virtual account currency
+                      friendlyMessage: USD virtual accounts cannot be created for a customer. Create it for the business instead by omitting customerId.
+                pendingComplianceReview:
+                  summary: Business not yet approved for virtual accounts in this currency
+                  value:
+                    code: VIRTUAL_ACCOUNT_PENDING_COMPLIANCE_REVIEW
+                    error: Virtual account pending compliance review
+                    details:
+                      errorMessage: Virtual account creation is pending compliance review
+                      friendlyMessage: Virtual account creation is pending compliance review
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const account = await afriex.paymentMethods.createVirtualAccount({\n  currency: \"USD\",\n  label: \"SALES\",\n  customerId: \"optional-customer-id\",\n});\n"
+  /api/v1/payment-method/pool-account:
+    parameters:
+    - $ref: '#/components/parameters/x-api-version'
+    get:
+      operationId: getPoolAccount
+      summary: Get the business pool account
+      description: 'Returns the pool account for the supplied `country`. Use the
+
+        `reference` on the response to reconcile incoming deposits.'
+      tags:
+      - Payment Methods
+      parameters:
+      - name: country
+        in: query
+        description: ISO 3166-1 alpha-2 country code.
+        required: true
+        schema:
+          type: string
+          examples:
+          - NG
+      - name: customerId
+        in: query
+        description: Optional customer ID to associate with this account.
+        required: false
+        schema:
+          type: string
+      - name: amount
+        in: query
+        description: Optional positive amount. Accepted but ignored.
+        required: false
+        schema:
+          type: number
+      - name: reference
+        in: query
+        description: Optional merchant-supplied reference. Accepted but ignored.
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Pool account returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PaymentMethod'
+              examples:
+                poolAccountNG:
+                  summary: Pool account assigned for an NG/NGN deposit
+                  value:
+                    data:
+                      paymentMethodId: 69c2804b30314b491e48b305
+                      channel: VIRTUAL_BANK_ACCOUNT
+                      customerId: 6929843e2c4653277440acc0
+                      reference: 6929843e2c4653277440acc0
+                      institution:
+                        institutionName: UBA
+                      accountName: TEST
+                      accountNumber: '12345678'
+                      countryCode: NG
+        '400':
+          description: Invalid request, no pool account configured for the country, or an unsupported country code was supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingCountry:
+                  summary: Missing country
+                  value:
+                    code: INVALID_BUSINESS_POOL_ACCOUNT_REQUEST
+                    error: Invalid business pool account request
+                    details:
+                      errorMessage: Invalid business pool account request
+                      friendlyMessage: No country code provided
+        '401':
+          description: Unauthorized - Invalid business API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingApiKey:
+                  summary: Missing API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Authorization header is missing
+                    details: {}
+                invalidApiKey:
+                  summary: Invalid API key
+                  value:
+                    code: AUTHENTICATION_ERROR
+                    error: Invalid authorization header
+                    details: {}
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                processorNotFound:
+                  summary: No pool account available for the country (for example, MX)
+                  value:
+                    code: TRANSACTION_PROCESSOR_NOT_FOUND
+                    error: Transaction processor not found
+                    details:
+                      errorMessage: Transaction processor not found
+                      friendlyMessage: No pool account available for business for this country
+                serverError:
+                  summary: Unexpected server error
+                  value:
+                    code: INTERNAL_SERVER_ERROR
+                    error: It's not you, it's us, please reach out to support
+                    details: {}
+        '503':
+          description: 'Temporarily unavailable: an upstream payment processor failed or timed out, or the API is restarting. Retry with backoff and honour the Retry-After header when present. The API never returns 502 or 504; if you receive one of those, it was generated by Cloudflare and its body does not follow this schema.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serviceUnavailable:
+                  summary: Upstream processor unavailable
+                  value:
+                    code: EXTERNAL_REQUEST_ERROR
+                    error: External request error
+                    details: {}
+      x-codeSamples:
+      - lang: TypeScript
+        label: Afriex SDK
+        source: "const poolAccount = await afriex.paymentMethods.listPoolAccounts({\n  customerId: \"customer-id\",\n  country: \"NG\",\n});\n"
+components:
+  schemas:
+    PaymentMethodResolveResponse:
+      type: object
+      properties:
+        recipientName:
+          type: string
+          description: The resolved name on the account.
+        institutionName:
+          type: string
+          description: The name of the resolved bank or mobile money provider.
+        institutionCode:
+          type: string
+          description: The code of the resolved bank or mobile money provider.
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    PaymentMethod:
+      type: object
+      description: A payment method. Empty fields are omitted. Account-shaped channels (BANK_ACCOUNT, MOBILE_MONEY, SWIFT, etc.) populate accountName, accountNumber, and institution; the CARD channel instead populates last4, brand, expiration, and cardName.
+      properties:
+        paymentMethodId:
+          type: string
+          description: The unique identifier for the payment method.
+        customerId:
+          $ref: '#/components/schemas/customerId'
+        reference:
+          type: string
+          description: Identifier to reconcile incoming deposits against.
+        institution:
+          $ref: '#/components/schemas/PaymentMethodInstitution'
+        transaction:
+          $ref: '#/components/schemas/PaymentMethodTransaction'
+        recipient:
+          $ref: '#/components/schemas/PaymentMethodRecipient'
+        channel:
+          type: string
+          enum:
+          - BANK_ACCOUNT
+          - MOBILE_MONEY
+          - SWIFT
+          - INTERAC
+          - UPI
+          - WE_CHAT
+          - ALIPAY
+          - CARD
+          - CRYPTO
+          - VIRTUAL_BANK_ACCOUNT
+          - POOL_ACCOUNT
+          - ACH_BANK_ACCOUNT
+          - PAYBILL_TILL
+          - RFP
+          - VIRTUAL_CARD
+          description: The payment method channel.
+        countryCode:
+          type: string
+          description: The ISO 3166-1 alpha-2 country code.
+        currency:
+          type: string
+          description: The payment method's currency (ISO 4217). Use this instead of inferring currency from countryCode, which is ambiguous (e.g. a USD account in a non-US country).
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: The operations this payment method is enabled for (e.g. DEPOSIT, WITHDRAW). Use it to select deposit-capable vs withdraw-capable methods. Also filterable via the `capabilities` query parameter.
+        accountName:
+          type: string
+          description: Name of the account holder. Present for account-shaped channels.
+        accountNumber:
+          type: string
+          description: Account number. Present for account-shaped channels.
+        routingNumber:
+          type: string
+          description: Bank routing number. Present for account-shaped channels that carry one (e.g. ACH bank accounts).
+        bankAddress:
+          $ref: '#/components/schemas/PaymentMethodBankAddress'
+        status:
+          type: string
+          enum:
+          - active
+          - pending
+          - deleted
+          - expired
+          - blocked
+          description: Lifecycle status of the payment method.
+        last4:
+          type: string
+          description: Last 4 digits of the card. CARD channel only.
+        brand:
+          type: string
+          enum:
+          - Visa
+          - MasterCard
+          - Discover
+          - American Express
+          - JCB
+          - Diners Club
+          - Eftpos Australia
+          - UnionPay
+          - Unknown
+          description: Card brand. CARD channel only.
+        expiration:
+          type: object
+          description: Card expiration. CARD channel only.
+          properties:
+            month:
+              type: integer
+            year:
+              type: integer
+        cardName:
+          type: string
+          description: Name on the card. CARD channel only.
+        expiresInMinutes:
+          type: integer
+          description: Minutes until a dynamic virtual account expires, when applicable.
+        amount:
+          type: number
+          description: Requested amount for a dynamic virtual account, when applicable.
+        extra:
+          type: object
+          description: Additional channel-specific properties.
+          additionalProperties: true
+        meta:
+          type: object
+          description: Optional meta data you attached to the payment method.
+    customerId:
+      type: string
+      description: The unique identifier of the customer.
+    PaymentMethodInstitution:
+      type: object
+      properties:
+        institutionId:
+          type: string
+          description: The unique identifier of the bank or mobile money provider if required.
+        institutionName:
+          type: string
+          description: The name of the bank or mobile money provider if required.
+        institutionCode:
+          type: string
+          description: The code of the bank or mobile money provider.
+        institutionAddress:
+          type: string
+          description: The address of the bank or mobile money provider if required.
+        correspondentBankName:
+          type: string
+          description: The correspondent (intermediary) bank name. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
+        correspondentBankAccountNumber:
+          type: string
+          description: The correspondent (intermediary) bank account number. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
+    BankCodeResolverResponse:
+      type:
+      - object
+      - 'null'
+      properties:
+        bankName:
+          type: string
+          description: The resolved bank or institution name.
+    PaymentMethodRecipient:
+      type: object
+      properties:
+        recipientEmail:
+          type: string
+          format: email
+          description: The email address of the recipient if needed.
+        recipientPhone:
+          type: string
+          description: The phone number of the recipient in E.164 format.
+        recipientAddress:
+          type: string
+          description: The address of the recipient if needed.
+        recipientName:
+          type: string
+          description: The name of the recipient if needed.
+    PaymentMethodBankAddress:
+      type: object
+      description: The issuing bank's postal address, populated per account by the provider that provisioned it. Present on virtual accounts and other account-shaped payment methods whose provider supplies it; omitted otherwise. This is the bank's address, not the account holder's.
+      properties:
+        line1:
+          type: string
+          description: First line of the bank's street address.
+        line2:
+          type: string
+          description: Second line of the bank's street address, when present.
+        city:
+          type: string
+          description: City.
+        state:
+          type: string
+          description: State or region, when present.
+        zip:
+          type: string
+          description: Postal or ZIP code.
+        country:
+          type: string
+          description: Country, as supplied by the provider.
+    PaymentMethodTransaction:
+      type: object
+      properties:
+        transactionInvoice:
+          type: string
+          description: The invoice filename (S3 object key) for the transaction, as returned by the media upload endpoint.
+        transactionNarration:
+          type: string
+          description: The optional reason for the transaction.
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
+    x-api-signature:
+      name: x-api-signature
+      in: header
+      required: false
+      description: Signature of the request payload, used for request authentication where payload signing is enabled for your business.
+      schema:
+        type: string
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: Static business API key issued from the dashboard. A business can provision **multiple API keys**, each scoped to a configurable set of **permissions** (e.g. read transactions, create deposits, etc). Permissions are chosen per key at creation time in the dashboard and may be revoked by deleting the key. Requests made with a key that does not include the permission required by the target endpoint is rejected with a `401 Unauthorized` response, the same response an unrecognised, malformed or revoked key returns. The API does not distinguish the two cases on the wire. Manage your keys and their permissions under **Developer → API keys** in the dashboard.
