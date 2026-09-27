@@ -25,7 +25,7 @@ tags:
 - Remittances
 - Cross-Border Payments
 - Fintech
-- Financial-Services
+- Financial Services
 - Foreign Exchange
 - Mobile Money
 - Money Transfer
@@ -33,6 +33,7 @@ tags:
 - Stablecoins
 - Virtual Accounts
 - Webhook
+- A2A
 tags_raw:
 - Payments
 - Remittances
@@ -46,6 +47,8 @@ tags_raw:
 - Stablecoins
 - Virtual Accounts
 - Webhooks
+- Financial-Services
+- A2A
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
@@ -306,3 +309,10 @@ x-enrichment:
   status: enriched
   artifacts_added: 19
   pass: local-v3
+x-a2a:
+  verified: true
+  probed: '2026-09-26'
+  url: "https://docs.afriex.com/.well-known/agent-card.json"
+  grade: "conformant"
+  protocol_version: "0.3"
+  control: 404

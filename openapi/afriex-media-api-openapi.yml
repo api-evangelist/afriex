@@ -80,17 +80,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
-    ErrorResponse:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Machine-readable error code.
-        error:
-          type: string
-          description: Human-readable error message.
-        details:
-          $ref: '#/components/schemas/ErrorDetails'
     MediaURLResponse:
       type: object
       properties:
@@ -116,6 +105,22 @@ components:
                 '
               examples:
               - 300
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
     MediaURLRequest:
       type: object
       required:
@@ -134,22 +139,17 @@ components:
           description: 'The category of the file being uploaded. Use `transaction` for transaction-related files (e.g. a transactions CSV) and `user` for user identity documents. Defaults to `user` when omitted.
 
             '
-    ErrorDetails:
+    ErrorResponse:
       type: object
       properties:
-        errorMessage:
+        code:
           type: string
-          description: Detailed/technical error message.
-        friendlyMessage:
+          description: Machine-readable error code.
+        error:
           type: string
-          description: User-facing error message safe to display.
-        data:
-          type: object
-          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
-          properties:
-            customerId:
-              type: string
-              description: Id of the existing customer (on a create conflict).
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
   parameters:
     x-api-version:
       name: x-api-version

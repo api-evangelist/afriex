@@ -325,6 +325,22 @@ paths:
         source: "const transaction = await afriex.balance.topUpSandbox({\n  amount: 500,\n  currency: \"USD\",\n});\n\nconsole.log(transaction.transactionId);\nconsole.log(transaction.status); // 'SUCCESS'\n"
 components:
   schemas:
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
     Transaction:
       type: object
       properties:
@@ -479,22 +495,6 @@ components:
           description: Human-readable error message.
         details:
           $ref: '#/components/schemas/ErrorDetails'
-    ErrorDetails:
-      type: object
-      properties:
-        errorMessage:
-          type: string
-          description: Detailed/technical error message.
-        friendlyMessage:
-          type: string
-          description: User-facing error message safe to display.
-        data:
-          type: object
-          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
-          properties:
-            customerId:
-              type: string
-              description: Id of the existing customer (on a create conflict).
   parameters:
     x-api-version:
       name: x-api-version

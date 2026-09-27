@@ -924,15 +924,21 @@ webhooks:
         '401':
           description: Unauthorized, signature verification failed.
 components:
-  parameters:
-    x-api-version:
-      name: x-api-version
-      in: header
-      required: false
-      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
-      schema:
-        type: string
   schemas:
+    WebhookEventName:
+      type: string
+      description: The webhook event identifier.
+      enum:
+      - CUSTOMER.CREATED
+      - CUSTOMER.UPDATED
+      - CUSTOMER.DELETED
+      - PAYMENT_METHOD.CREATED
+      - PAYMENT_METHOD.UPDATED
+      - PAYMENT_METHOD.DELETED
+      - TRANSACTION.CREATED
+      - TRANSACTION.UPDATED
+      - CHECKOUT_SESSION.CREATED
+      - POOL_DEPOSIT_REQUEST.REJECTED
     ErrorDetails:
       type: object
       properties:
@@ -960,20 +966,14 @@ components:
           description: Human-readable error message.
         details:
           $ref: '#/components/schemas/ErrorDetails'
-    WebhookEventName:
-      type: string
-      description: The webhook event identifier.
-      enum:
-      - CUSTOMER.CREATED
-      - CUSTOMER.UPDATED
-      - CUSTOMER.DELETED
-      - PAYMENT_METHOD.CREATED
-      - PAYMENT_METHOD.UPDATED
-      - PAYMENT_METHOD.DELETED
-      - TRANSACTION.CREATED
-      - TRANSACTION.UPDATED
-      - CHECKOUT_SESSION.CREATED
-      - POOL_DEPOSIT_REQUEST.REJECTED
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
   securitySchemes:
     ApiKey:
       type: apiKey

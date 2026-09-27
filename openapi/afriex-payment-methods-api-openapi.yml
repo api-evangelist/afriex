@@ -1895,17 +1895,85 @@ components:
         institutionCode:
           type: string
           description: The code of the resolved bank or mobile money provider.
-    ErrorResponse:
+    BankCodeResolverResponse:
+      type:
+      - object
+      - 'null'
+      properties:
+        bankName:
+          type: string
+          description: The resolved bank or institution name.
+    PaymentMethodTransaction:
       type: object
       properties:
-        code:
+        transactionInvoice:
           type: string
-          description: Machine-readable error code.
-        error:
+          description: The invoice filename (S3 object key) for the transaction, as returned by the media upload endpoint.
+        transactionNarration:
           type: string
-          description: Human-readable error message.
-        details:
-          $ref: '#/components/schemas/ErrorDetails'
+          description: The optional reason for the transaction.
+    customerId:
+      type: string
+      description: The unique identifier of the customer.
+    PaymentMethodBankAddress:
+      type: object
+      description: The issuing bank's postal address, populated per account by the provider that provisioned it. Present on virtual accounts and other account-shaped payment methods whose provider supplies it; omitted otherwise. This is the bank's address, not the account holder's.
+      properties:
+        line1:
+          type: string
+          description: First line of the bank's street address.
+        line2:
+          type: string
+          description: Second line of the bank's street address, when present.
+        city:
+          type: string
+          description: City.
+        state:
+          type: string
+          description: State or region, when present.
+        zip:
+          type: string
+          description: Postal or ZIP code.
+        country:
+          type: string
+          description: Country, as supplied by the provider.
+    PaymentMethodInstitution:
+      type: object
+      properties:
+        institutionId:
+          type: string
+          description: The unique identifier of the bank or mobile money provider if required.
+        institutionName:
+          type: string
+          description: The name of the bank or mobile money provider if required.
+        institutionCode:
+          type: string
+          description: The code of the bank or mobile money provider.
+        institutionAddress:
+          type: string
+          description: The address of the bank or mobile money provider if required.
+        correspondentBankName:
+          type: string
+          description: The correspondent (intermediary) bank name. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
+        correspondentBankAccountNumber:
+          type: string
+          description: The correspondent (intermediary) bank account number. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
     PaymentMethod:
       type: object
       description: A payment method. Empty fields are omitted. Account-shaped channels (BANK_ACCOUNT, MOBILE_MONEY, SWIFT, etc.) populate accountName, accountNumber, and institution; the CARD channel instead populates last4, brand, expiration, and cardName.
@@ -2014,38 +2082,6 @@ components:
         meta:
           type: object
           description: Optional meta data you attached to the payment method.
-    customerId:
-      type: string
-      description: The unique identifier of the customer.
-    PaymentMethodInstitution:
-      type: object
-      properties:
-        institutionId:
-          type: string
-          description: The unique identifier of the bank or mobile money provider if required.
-        institutionName:
-          type: string
-          description: The name of the bank or mobile money provider if required.
-        institutionCode:
-          type: string
-          description: The code of the bank or mobile money provider.
-        institutionAddress:
-          type: string
-          description: The address of the bank or mobile money provider if required.
-        correspondentBankName:
-          type: string
-          description: The correspondent (intermediary) bank name. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
-        correspondentBankAccountNumber:
-          type: string
-          description: The correspondent (intermediary) bank account number. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
-    BankCodeResolverResponse:
-      type:
-      - object
-      - 'null'
-      properties:
-        bankName:
-          type: string
-          description: The resolved bank or institution name.
     PaymentMethodRecipient:
       type: object
       properties:
@@ -2062,53 +2098,17 @@ components:
         recipientName:
           type: string
           description: The name of the recipient if needed.
-    PaymentMethodBankAddress:
-      type: object
-      description: The issuing bank's postal address, populated per account by the provider that provisioned it. Present on virtual accounts and other account-shaped payment methods whose provider supplies it; omitted otherwise. This is the bank's address, not the account holder's.
-      properties:
-        line1:
-          type: string
-          description: First line of the bank's street address.
-        line2:
-          type: string
-          description: Second line of the bank's street address, when present.
-        city:
-          type: string
-          description: City.
-        state:
-          type: string
-          description: State or region, when present.
-        zip:
-          type: string
-          description: Postal or ZIP code.
-        country:
-          type: string
-          description: Country, as supplied by the provider.
-    PaymentMethodTransaction:
+    ErrorResponse:
       type: object
       properties:
-        transactionInvoice:
+        code:
           type: string
-          description: The invoice filename (S3 object key) for the transaction, as returned by the media upload endpoint.
-        transactionNarration:
+          description: Machine-readable error code.
+        error:
           type: string
-          description: The optional reason for the transaction.
-    ErrorDetails:
-      type: object
-      properties:
-        errorMessage:
-          type: string
-          description: Detailed/technical error message.
-        friendlyMessage:
-          type: string
-          description: User-facing error message safe to display.
-        data:
-          type: object
-          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
-          properties:
-            customerId:
-              type: string
-              description: Id of the existing customer (on a create conflict).
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
   parameters:
     x-api-version:
       name: x-api-version
