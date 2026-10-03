@@ -1883,38 +1883,43 @@ paths:
         source: "const poolAccount = await afriex.paymentMethods.listPoolAccounts({\n  customerId: \"customer-id\",\n  country: \"NG\",\n});\n"
 components:
   schemas:
-    PaymentMethodResolveResponse:
+    PaymentMethodInstitution:
       type: object
       properties:
-        recipientName:
+        institutionId:
           type: string
-          description: The resolved name on the account.
+          description: The unique identifier of the bank or mobile money provider if required.
         institutionName:
           type: string
-          description: The name of the resolved bank or mobile money provider.
+          description: The name of the bank or mobile money provider if required.
         institutionCode:
           type: string
-          description: The code of the resolved bank or mobile money provider.
-    BankCodeResolverResponse:
-      type:
-      - object
-      - 'null'
-      properties:
-        bankName:
+          description: The code of the bank or mobile money provider.
+        institutionAddress:
           type: string
-          description: The resolved bank or institution name.
-    PaymentMethodTransaction:
+          description: The address of the bank or mobile money provider if required.
+        correspondentBankName:
+          type: string
+          description: The correspondent (intermediary) bank name. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
+        correspondentBankAccountNumber:
+          type: string
+          description: The correspondent (intermediary) bank account number. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
+    PaymentMethodRecipient:
       type: object
       properties:
-        transactionInvoice:
+        recipientEmail:
           type: string
-          description: The invoice filename (S3 object key) for the transaction, as returned by the media upload endpoint.
-        transactionNarration:
+          format: email
+          description: The email address of the recipient if needed.
+        recipientPhone:
           type: string
-          description: The optional reason for the transaction.
-    customerId:
-      type: string
-      description: The unique identifier of the customer.
+          description: The phone number of the recipient in E.164 format.
+        recipientAddress:
+          type: string
+          description: The address of the recipient if needed.
+        recipientName:
+          type: string
+          description: The name of the recipient if needed.
     PaymentMethodBankAddress:
       type: object
       description: The issuing bank's postal address, populated per account by the provider that provisioned it. Present on virtual accounts and other account-shaped payment methods whose provider supplies it; omitted otherwise. This is the bank's address, not the account holder's.
@@ -1937,27 +1942,17 @@ components:
         country:
           type: string
           description: Country, as supplied by the provider.
-    PaymentMethodInstitution:
+    ErrorResponse:
       type: object
       properties:
-        institutionId:
+        code:
           type: string
-          description: The unique identifier of the bank or mobile money provider if required.
-        institutionName:
+          description: Machine-readable error code.
+        error:
           type: string
-          description: The name of the bank or mobile money provider if required.
-        institutionCode:
-          type: string
-          description: The code of the bank or mobile money provider.
-        institutionAddress:
-          type: string
-          description: The address of the bank or mobile money provider if required.
-        correspondentBankName:
-          type: string
-          description: The correspondent (intermediary) bank name. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
-        correspondentBankAccountNumber:
-          type: string
-          description: The correspondent (intermediary) bank account number. Mandatory for USD (SWIFT) payout payment methods; required to produce settlement advices/invoices.
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
     ErrorDetails:
       type: object
       properties:
@@ -1974,6 +1969,18 @@ components:
             customerId:
               type: string
               description: Id of the existing customer (on a create conflict).
+    PaymentMethodResolveResponse:
+      type: object
+      properties:
+        recipientName:
+          type: string
+          description: The resolved name on the account.
+        institutionName:
+          type: string
+          description: The name of the resolved bank or mobile money provider.
+        institutionCode:
+          type: string
+          description: The code of the resolved bank or mobile money provider.
     PaymentMethod:
       type: object
       description: A payment method. Empty fields are omitted. Account-shaped channels (BANK_ACCOUNT, MOBILE_MONEY, SWIFT, etc.) populate accountName, accountNumber, and institution; the CARD channel instead populates last4, brand, expiration, and cardName.
@@ -2082,46 +2089,39 @@ components:
         meta:
           type: object
           description: Optional meta data you attached to the payment method.
-    PaymentMethodRecipient:
+    PaymentMethodTransaction:
       type: object
       properties:
-        recipientEmail:
+        transactionInvoice:
           type: string
-          format: email
-          description: The email address of the recipient if needed.
-        recipientPhone:
+          description: The invoice filename (S3 object key) for the transaction, as returned by the media upload endpoint.
+        transactionNarration:
           type: string
-          description: The phone number of the recipient in E.164 format.
-        recipientAddress:
-          type: string
-          description: The address of the recipient if needed.
-        recipientName:
-          type: string
-          description: The name of the recipient if needed.
-    ErrorResponse:
-      type: object
+          description: The optional reason for the transaction.
+    BankCodeResolverResponse:
+      type:
+      - object
+      - 'null'
       properties:
-        code:
+        bankName:
           type: string
-          description: Machine-readable error code.
-        error:
-          type: string
-          description: Human-readable error message.
-        details:
-          $ref: '#/components/schemas/ErrorDetails'
+          description: The resolved bank or institution name.
+    customerId:
+      type: string
+      description: The unique identifier of the customer.
   parameters:
-    x-api-version:
-      name: x-api-version
-      in: header
-      required: false
-      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
-      schema:
-        type: string
     x-api-signature:
       name: x-api-signature
       in: header
       required: false
       description: Signature of the request payload, used for request authentication where payload signing is enabled for your business.
+      schema:
+        type: string
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
       schema:
         type: string
   securitySchemes:

@@ -206,26 +206,6 @@ paths:
         source: "const session = await afriex.checkout.createSession({\n  amount: 500000,\n  currency: \"NGN\",\n  merchantReference: \"order-2026-05-12-001\",\n  redirectUrl: \"https://yourapp.com/checkout/return\",\n  customer: {\n    name: \"John Doe\",\n    email: \"john@example.com\",\n    phone: \"+2348192837465\",\n    countryCode: \"NG\",\n  },\n  // Send the same list everywhere; unsupported ones are dropped\n  channels: [\"VIRTUAL_BANK_ACCOUNT\", \"MOBILE_MONEY\", \"CARD\"],\n  metadata: { orderId: \"order-456\", cartId: \"cart-123\" },\n});\n\n// Redirect customer to session.checkoutUrl\nconsole.log(session.checkoutUrl);\n// What the payer will be shown, e.g. [\"VIRTUAL_BANK_ACCOUNT\", \"CARD\"]\nconsole.log(session.channels);\n"
 components:
   schemas:
-    CreateCheckoutSessionResponse:
-      type: object
-      properties:
-        checkoutUrl:
-          type: string
-          format: uri
-          description: The URL the customer should be redirected to in order to complete the hosted checkout flow.
-          examples:
-          - https://pay.afriex.com/pay/eyJhbGciOiJI...
-        channels:
-          type: array
-          description: 'The payment channels the customer will actually be offered on the checkout page: the request''s `channels`, in the order you sent them, minus any the currency cannot collect on. Never empty.'
-          items:
-            type: string
-            enum:
-            - VIRTUAL_BANK_ACCOUNT
-            - MOBILE_MONEY
-            - CARD
-          examples:
-          - - MOBILE_MONEY
     CheckoutSessionCustomer:
       type: object
       required:
@@ -255,6 +235,17 @@ components:
           description: The ISO 3166-1 alpha-2 country code of the customer (e.g., 'NG', 'GH'). Case-insensitive; values are normalized to uppercase.
           examples:
           - NG
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
     ErrorDetails:
       type: object
       properties:
@@ -271,17 +262,26 @@ components:
             customerId:
               type: string
               description: Id of the existing customer (on a create conflict).
-    ErrorResponse:
+    CreateCheckoutSessionResponse:
       type: object
       properties:
-        code:
+        checkoutUrl:
           type: string
-          description: Machine-readable error code.
-        error:
-          type: string
-          description: Human-readable error message.
-        details:
-          $ref: '#/components/schemas/ErrorDetails'
+          format: uri
+          description: The URL the customer should be redirected to in order to complete the hosted checkout flow.
+          examples:
+          - https://pay.afriex.com/pay/eyJhbGciOiJI...
+        channels:
+          type: array
+          description: 'The payment channels the customer will actually be offered on the checkout page: the request''s `channels`, in the order you sent them, minus any the currency cannot collect on. Never empty.'
+          items:
+            type: string
+            enum:
+            - VIRTUAL_BANK_ACCOUNT
+            - MOBILE_MONEY
+            - CARD
+          examples:
+          - - MOBILE_MONEY
   parameters:
     x-api-version:
       name: x-api-version

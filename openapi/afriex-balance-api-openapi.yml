@@ -324,23 +324,15 @@ paths:
         label: Afriex SDK
         source: "const transaction = await afriex.balance.topUpSandbox({\n  amount: 500,\n  currency: \"USD\",\n});\n\nconsole.log(transaction.transactionId);\nconsole.log(transaction.status); // 'SUCCESS'\n"
 components:
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
   schemas:
-    ErrorDetails:
-      type: object
-      properties:
-        errorMessage:
-          type: string
-          description: Detailed/technical error message.
-        friendlyMessage:
-          type: string
-          description: User-facing error message safe to display.
-        data:
-          type: object
-          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
-          properties:
-            customerId:
-              type: string
-              description: Id of the existing customer (on a create conflict).
     Transaction:
       type: object
       properties:
@@ -484,6 +476,22 @@ components:
         updatedAt:
           type: string
           description: The date and time the transaction was last updated.
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
     ErrorResponse:
       type: object
       properties:
@@ -495,14 +503,6 @@ components:
           description: Human-readable error message.
         details:
           $ref: '#/components/schemas/ErrorDetails'
-  parameters:
-    x-api-version:
-      name: x-api-version
-      in: header
-      required: false
-      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
-      schema:
-        type: string
   securitySchemes:
     ApiKey:
       type: apiKey

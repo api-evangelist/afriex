@@ -1100,7 +1100,49 @@ paths:
         label: Afriex SDK
         source: "const customer = await afriex.customers.verify(\"customer-id\", {\n  docType: \"BVN\",\n  docValue: \"22222222222\",\n});\n"
 components:
+  parameters:
+    x-api-signature:
+      name: x-api-signature
+      in: header
+      required: false
+      description: Signature of the request payload, used for request authentication where payload signing is enabled for your business.
+      schema:
+        type: string
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
   schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
+    ErrorDetails:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Detailed/technical error message.
+        friendlyMessage:
+          type: string
+          description: User-facing error message safe to display.
+        data:
+          type: object
+          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
+          properties:
+            customerId:
+              type: string
+              description: Id of the existing customer (on a create conflict).
     Customer:
       type: object
       properties:
@@ -1132,48 +1174,6 @@ components:
         updatedAt:
           type: string
           description: The date and time the customer was last updated.
-    ErrorDetails:
-      type: object
-      properties:
-        errorMessage:
-          type: string
-          description: Detailed/technical error message.
-        friendlyMessage:
-          type: string
-          description: User-facing error message safe to display.
-        data:
-          type: object
-          description: Optional caller-safe context for the error. On a customer-create uniqueness conflict (EMAIL_ALREADY_EXISTS / PHONE_NUMBER_ALREADY_EXISTS) this carries the existing customer's id, so you can adopt it without a follow-up lookup.
-          properties:
-            customerId:
-              type: string
-              description: Id of the existing customer (on a create conflict).
-    ErrorResponse:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Machine-readable error code.
-        error:
-          type: string
-          description: Human-readable error message.
-        details:
-          $ref: '#/components/schemas/ErrorDetails'
-  parameters:
-    x-api-version:
-      name: x-api-version
-      in: header
-      required: false
-      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
-      schema:
-        type: string
-    x-api-signature:
-      name: x-api-signature
-      in: header
-      required: false
-      description: Signature of the request payload, used for request authentication where payload signing is enabled for your business.
-      schema:
-        type: string
   securitySchemes:
     ApiKey:
       type: apiKey
