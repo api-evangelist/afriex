@@ -246,6 +246,9 @@ apis:
   - type: Webhooks
     url: asyncapi/afriex-business-webhooks.yml
 common:
+- type: CapabilityMap
+  url: capabilities/afriex-capability-edges.yml
+  name: Afriex Business Capability Map
 - type: DomainSecurity
   url: security/afriex-domain-security.yml
 - type: Website
