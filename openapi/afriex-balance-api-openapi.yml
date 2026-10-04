@@ -324,14 +324,6 @@ paths:
         label: Afriex SDK
         source: "const transaction = await afriex.balance.topUpSandbox({\n  amount: 500,\n  currency: \"USD\",\n});\n\nconsole.log(transaction.transactionId);\nconsole.log(transaction.status); // 'SUCCESS'\n"
 components:
-  parameters:
-    x-api-version:
-      name: x-api-version
-      in: header
-      required: false
-      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
-      schema:
-        type: string
   schemas:
     Transaction:
       type: object
@@ -503,6 +495,14 @@ components:
           description: Human-readable error message.
         details:
           $ref: '#/components/schemas/ErrorDetails'
+  parameters:
+    x-api-version:
+      name: x-api-version
+      in: header
+      required: false
+      description: API version in ISO 8601 format. The only supported version is `2026-05-18`, which is also the default when the header is omitted. Any other value is rejected with a `400 Bad Request`.
+      schema:
+        type: string
   securitySchemes:
     ApiKey:
       type: apiKey
