@@ -80,35 +80,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
-    ErrorResponse:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Machine-readable error code.
-        error:
-          type: string
-          description: Human-readable error message.
-        details:
-          $ref: '#/components/schemas/ErrorDetails'
-    MediaURLRequest:
-      type: object
-      required:
-      - fileName
-      properties:
-        fileName:
-          type: string
-          description: The name of the file to upload.
-          examples:
-          - document.pdf
-        type:
-          type: string
-          enum:
-          - transaction
-          - user
-          description: 'The category of the file being uploaded. Use `transaction` for transaction-related files (e.g. a transactions CSV) and `user` for user identity documents. Defaults to `user` when omitted.
-
-            '
     ErrorDetails:
       type: object
       properties:
@@ -125,6 +96,17 @@ components:
             customerId:
               type: string
               description: Id of the existing customer (on a create conflict).
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
     MediaURLResponse:
       type: object
       properties:
@@ -150,6 +132,24 @@ components:
                 '
               examples:
               - 300
+    MediaURLRequest:
+      type: object
+      required:
+      - fileName
+      properties:
+        fileName:
+          type: string
+          description: The name of the file to upload.
+          examples:
+          - document.pdf
+        type:
+          type: string
+          enum:
+          - transaction
+          - user
+          description: 'The category of the file being uploaded. Use `transaction` for transaction-related files (e.g. a transactions CSV) and `user` for user identity documents. Defaults to `user` when omitted.
+
+            '
   parameters:
     x-api-version:
       name: x-api-version

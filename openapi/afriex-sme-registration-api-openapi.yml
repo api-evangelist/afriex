@@ -187,6 +187,17 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        error:
+          type: string
+          description: Human-readable error message.
+        details:
+          $ref: '#/components/schemas/ErrorDetails'
     ErrorDetails:
       type: object
       properties:
@@ -203,17 +214,6 @@ components:
             customerId:
               type: string
               description: Id of the existing customer (on a create conflict).
-    ErrorResponse:
-      type: object
-      properties:
-        code:
-          type: string
-          description: Machine-readable error code.
-        error:
-          type: string
-          description: Human-readable error message.
-        details:
-          $ref: '#/components/schemas/ErrorDetails'
   parameters:
     x-api-version:
       name: x-api-version
