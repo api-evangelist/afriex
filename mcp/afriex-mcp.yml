@@ -342,3 +342,35 @@ x-evidence:
   tools_list_http_status: 200
   tools_returned: 26
   authenticated: false
+tool_quality:
+  tool_count: 26
+  tokens_total: 6068
+  tokens_per_tool_median: 180
+  heavy_tools: []
+  heavy_tool_count: 0
+  params_total: 82
+  params_undescribed: 0
+  params_described_pct: 100.0
+  tools_with_undescribed_params: 0
+  tools_annotated: 26
+  annotated_pct: 100.0
+  state_changing_unhinted:
+  - create_customer
+  - update_customer_kyc
+  - create_transaction
+  - create_payment_method
+  - create_virtual_account
+  - create_checkout_session
+  - trigger_webhook
+  tools_missing_schema: 0
+  short_descriptions: 0
+  duplicate_descriptions: 0
+  duplicate_names: 0
+  nonportable_names: []
+  output_schema_count: 0
+  token_estimate: chars/3.6 of each compact tool definition
+  source: mcp/afriex-mcp-tools.json
+  measured: '2026-10-20'
+  scored: false
+  note: Facts from the saved tools/list capture (mcp_tool_quality.py); recorded, not scored. Checks learned
+    from Glimind's agent-readiness audit.
