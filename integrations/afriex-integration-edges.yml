@@ -1,37 +1,4 @@
 edges:
-- partner_name: A2A protocol (own Agent Card)
-  partner: null
-  partner_match: register
-  type: register
-  direction: provider-built
-  category: A2A agent
-  evidence: https://docs.afriex.com/.well-known/agent-card.json
-  channel: provider-built
-  relationship: compatible
-  shape: a2a
-  evidence_kind: own-wellknown
-  degree: conformant
-  report_only: true
-  a2a_card:
-    grade: conformant
-    verdict: live
-    protocol_version: '0.3'
-    deviations:
-    - supportedInterfaces-instead-of-additionalInterfaces
-    card_subject: docs
-  contract_reference:
-    register: provider's own /.well-known/agent-card.json
-    spec_file: null
-    standard: A2A
-    role: a2a-agent-card
-    registered_name: Afriex Business API
-    organization: Afriex Business API
-    matched_domain: afriex.com
-    matched_by: own-domain
-    detected_by: sweep-ai-agents.py
-    detected: '2026-10-15'
-  detected_by: sweep-ai-agents.py
-  first_seen: '2026-10-15'
 - partner_name: FinCEN (MSB registration)
   partner: null
   partner_match: register
@@ -94,6 +61,68 @@ edges:
     detected: '2026-10-18'
   detected_by: sweep-official-sdks.py
   first_seen: '2026-10-18'
+- partner_name: A2A protocol (own Agent Card)
+  partner: null
+  partner_match: register
+  type: register
+  direction: provider-built
+  category: A2A agent
+  evidence: https://docs.afriex.com/.well-known/agent-card.json
+  channel: provider-built
+  relationship: compatible
+  shape: a2a
+  evidence_kind: own-wellknown
+  degree: conformant
+  report_only: true
+  a2a_card:
+    grade: conformant
+    verdict: live
+    protocol_version: '0.3'
+    deviations:
+    - supportedInterfaces-instead-of-additionalInterfaces
+    card_subject: docs
+  contract_reference:
+    register: provider's own /.well-known/agent-card.json
+    spec_file: null
+    standard: A2A
+    role: a2a-agent-card
+    registered_name: Afriex Business API
+    organization: Afriex Business API
+    matched_domain: afriex.com
+    matched_by: own-domain
+    detected_by: sweep-ai-agents.py
+    detected: '2026-10-19'
+  detected_by: sweep-ai-agents.py
+  first_seen: '2026-10-15'
+- partner_name: Central Bank of Nigeria International Money Transfer Operators
+  partner: null
+  partner_match: register
+  type: register
+  channel: regulator-register
+  relationship: standard-participant
+  direction: partner-built
+  evidence: https://www.cbn.gov.ng/PaymentsSystem/InternationalMoneyTransferOperators.html
+  category: Nigerian international money transfer licence
+  contract_reference:
+    register: Central Bank of Nigeria International Money Transfer Operators
+    spec_file: null
+    standard: null
+    role: licensed-participant
+    registrations:
+    - registered_name: Afriex Inc
+      licences:
+      - International Money Transfer Operator
+      register_country: US
+      matched_domain: afriex.com
+      matched_by: domain
+      identity: wikidata Q136445631 'Afriex' P856 https://www.afriex.com
+    signal_note: 'participation only: a regulator licence / registration; no API conformance is published by this
+      register'
+    detected_by: sweep-africa-payments.py
+    detected: '2026-10-20'
+    identity_source: wikidata P856 (labelled provenance step; Kin 2026-10-15 decision 1)
+  detected_by: sweep-africa-payments.py
+  first_seen: '2026-10-20'
 generated: '2026-10-15'
 method: searched
 source:
@@ -110,3 +139,12 @@ checked:
 - https://repo1.maven.org/maven2
 - https://rubygems.org/api/v1
 - https://www.access-dvs-register.service.gov.uk/register/download-register
+- https://authorisation.pasa.org.za/so-and-tppp/documents/
+- https://authorisation.pasa.org.za/wp-content/uploads/2026/07/Public-list-SO-July-2026.pdf
+- https://authorisation.pasa.org.za/wp-content/uploads/2026/07/Public-list-TPPP-July-2026.pdf
+- https://www.bceao.int/fr/content/etablissements-de-monnaie-electronique
+- https://www.bog.gov.gh/fintech-innovation/approved-institutions/
+- https://www.cbn.gov.ng/PaymentsSystem/InternationalMoneyTransferOperators.html
+- https://www.cbn.gov.ng/PaymentsSystem/PSPs.html
+- https://www.centralbank.go.ke/wp-content/uploads/2026/09/Directory-of-Authorized-Payment-Service-Providers-August-10-2026.pdf
+- https://www.centralbank.go.ke/wp-content/uploads/2026/10/Directory-of-Licenced-Money-Remittance-Providers-as-at-September-30-2026.pdf
