@@ -64,24 +64,134 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-Afriex is a cross-border payments and remittance company moving money between Africa, North
-America, Europe and Asia. Alongside its consumer remittance app it publishes the **Afriex Business
-API** — a REST API for customer onboarding and KYC, payment methods across bank transfer, mobile
-money, SWIFT, UPI, Interac and USDC/USDT wallets, multi-currency balances and live FX rates,
-deposits, withdrawals and in-wallet swaps, hosted checkout, virtual and pool collection accounts,
-and RSA-signed webhooks.
+Afriex is a cross-border payments and remittance company that moves money between Africa, North America, Europe and Asia. Its consumer app handles person-to-person remittances, while the Afriex Business API gives companies programmatic access to the same rails: customer onboarding and KYC, payment methods across bank accounts, mobile money, SWIFT, UPI, Interac and USDC/USDT crypto wallets, multi-currency wallet balances and real-time FX rates, deposits, withdrawals and in-wallet currency swaps, hosted checkout sessions, virtual and pool collection accounts, and RSA-signed webhooks for transaction lifecycle events. The API is documented with an OpenAPI 3.1 contract, a first-party TypeScript SDK, and a hosted remote MCP server that exposes the same surface to AI agents.
 
-**Public API surface profiled here**
+**Areas:** Payments · Remittances · Cross-Border Payments · Fintech · Financial Services · Foreign Exchange · Mobile Money · Money Transfer · Africa · Stablecoins · Virtual Accounts · Webhook
 
-- **OpenAPI 3.1** contract, 32 operations across 25 paths, with an in-spec `webhooks` block —
-  served at <https://api.afriex.com/api/docs.json> and mirrored at
-  <https://docs.afriex.com/api-reference/openapi.json>
-- **Remote MCP server** at `https://mcp.afriex.com/mcp` — 26 tools, `tools/list` answers
-  anonymously with full input schemas
-- **A2A agent card** at <https://docs.afriex.com/.well-known/agent-card.json>
-- **Provider-published Agent Skill**, linked from that card
-- **llms.txt** at <https://docs.afriex.com/llms.txt>
-- **Official TypeScript SDK** `@afriex/sdk`
+## Afriex on APIs.io
 
-Links: <https://www.afriex.com/> · docs <https://docs.afriex.com/> ·
-status <https://afriexinc.statuspage.io> · GitHub <https://github.com/Afri-exchange>
+Everything profiled for Afriex is published on APIs.io rather than in this repository. Start at the provider page — **[apis.io/providers/afriex/](https://apis.io/providers/afriex/)** — or go straight to one of the APIs or properties below.
+
+### APIs (10)
+
+- [Afriex MCP Server](https://apis.io/apis/afriex/afriex-mcp-server/) — Afriex publishes a hosted, remote Model Context Protocol server at https://mcp.afriex.com/mcp that exposes 26 tools covering the Business API surface —…
+- [Afriex Balance API](https://apis.io/apis/afriex/afriex-balance-api/) — View and top up your business wallet balances.
+- [Afriex Checkout Sessions API](https://apis.io/apis/afriex/afriex-checkout-sessions-api/) — Create hosted checkout sessions.
+- [Afriex Customers API](https://apis.io/apis/afriex/afriex-customers-api/) — Create and manage your customers.
+- [Afriex Media API](https://apis.io/apis/afriex/afriex-media-api/) — Generate presigned URLs for secure file uploads.
+- [Afriex Payment Methods API](https://apis.io/apis/afriex/afriex-payment-methods-api/) — Register and resolve customer payout and collection methods.
+- [Afriex Rates API](https://apis.io/apis/afriex/afriex-rates-api/) — Fetch real-time exchange rates.
+- [Afriex SME Registration API](https://apis.io/apis/afriex/afriex-sme-registration-api/) — The SME Registration API from Afriex — 2 operation(s) for sme registration.
+- [Afriex Transactions API](https://apis.io/apis/afriex/afriex-transactions-api/) — Create and track deposits, withdrawals, and swaps.
+- [Afriex Webhooks API](https://apis.io/apis/afriex/afriex-webhooks-api/) — Webhook event payloads and sandbox webhook testing.
+
+### Published properties
+
+Each property below is a page on APIs.io carrying the machine-readable artifact and what it says.
+
+#### AsyncAPI (1)
+
+Event-driven and webhook contracts.
+
+- [Afriex Business Webhooks](https://apis.io/asyncapis/afriex/afriex-business-webhooks/)
+
+#### MCP servers (1)
+
+Model Context Protocol servers that expose the API to agents.
+
+- [afriex-api](https://apis.io/servers/afriex/afriex-api/)
+
+#### Overlays (1)
+
+OpenAPI overlays, including conversational phrasing for each operation.
+
+- [Afriex Business Overlay](https://apis.io/overlays/afriex/afriex-business-overlay/)
+
+#### Security (2)
+
+Authentication, trust centre, and vulnerability disclosure.
+
+- [Afriex Authentication](https://apis.io/security/afriex/afriex-authentication/)
+- [Afriex Domain Security](https://apis.io/security/afriex/afriex-domain-security/)
+
+#### Plans and pricing (1)
+
+Published plans, tiers and prices.
+
+- [Afriex Plans Pricing](https://apis.io/plans/afriex/afriex-plans-pricing/)
+
+#### Rate limits (1)
+
+Published request limits.
+
+- [Afriex Rate Limits](https://apis.io/rate-limits/afriex/afriex-rate-limits/)
+
+## Where to find this API
+
+Links to the company's own pages. This repository publishes no copy of their specifications — the canonical document is theirs and lives at the URLs below.
+
+- [Website](https://www.afriex.com/)
+- [Documentation](https://docs.afriex.com/)
+- [Getting started](https://docs.afriex.com/quickstart)
+- [API reference](https://docs.afriex.com/api-reference/introduction)
+- [Sign up](https://business.afriex.com/)
+- [Blog](https://dev.to/afriex)
+- [Terms of service](https://www.afriex.com/terms-and-condition)
+- [Privacy policy](https://www.afriex.com/privacy-policy)
+- [GitHub](https://github.com/Afri-exchange)
+- [Status](https://afriexinc.statuspage.io)
+
+## API Evangelist rating
+
+**Kin Score 48.4** — developing · rubric 0.25.0 · scored 2026-10-23
+
+| Facet | Score |
+|---|---|
+| Discoverability | 75.0 |
+| Contract quality | 62.6 |
+| Contract governance | 4.5 |
+| Operational transparency | 26.3 |
+| Developer ergonomics | 73.8 |
+| Access clarity | 34.2 |
+
+**Agent readiness 47.8** — agent-native
+
+| Agent-readiness dimension | Result |
+|---|---|
+| Spec Presence | yes |
+| Agentic Access | — |
+| Reversibility Documented | — |
+| MCP Server | documented (partial credit) |
+| Auth Clarity | bearer (partial credit) |
+| Idempotency | verified |
+| Error Semantics | verified |
+| OpenAPI Examples | verified |
+| Rate Limit Signal | documented (partial credit) |
+| Event Surface Described | yes |
+| Agent Skills | yes |
+| Well Known Catalog | — |
+| Consent Identity | — |
+| Agent Card | — |
+| Dry Run Mode | — |
+| Delegated Identity | — |
+| Protected Resource Metadata | — |
+| Dynamic Client Registration | — |
+| Agentic Commerce | — |
+| Pagination Ratio | partial |
+| Operation Distinctiveness | distinct |
+
+**Regulatory alignment 22.3** — Payments
+
+The rubric is published at [github.com/api-evangelist/kin-score](https://github.com/api-evangelist/kin-score). The per-check breakdown behind these numbers — which checks were earned, partial or missed — along with score history and how this provider compares to its peers, is available at [apis.io/providers/afriex/](https://apis.io/providers/afriex/).
+
+## How this profile is made
+
+API Evangelist profiles a company's public API surface the way a developer would find it: the website, developer portal and documentation, the specifications it publishes, its public repositories, and its pricing, status and changelog pages. From that it derives the properties above — contracts split per API, workflows, schemas, collections, governance rules, plans and rate limits — and scores them against the published [Kin Score rubric](https://github.com/api-evangelist/kin-score).
+
+The artifacts are published on [APIs.io](https://apis.io), not in this repository. This repository is the public record for Afriex: the place to say something is wrong, missing or out of date, and to ask for a re-score or a removal.
+
+## Open an issue
+
+- **Something about this listing** — a wrong description, a missing API, a stale artifact or a question about the rating: [open an issue on this repository](https://github.com/api-evangelist/afriex/issues/new).
+- **A new API, or one that is not in the catalog yet** — [submit it on APIs.io](https://apis.io/add/).
+- **Anything else** — [the APIs.io inbox](https://github.com/api-search/inbox/issues/new) or [info@apievangelist.com](mailto:info@apievangelist.com).
