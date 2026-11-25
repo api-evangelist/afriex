@@ -107,6 +107,12 @@ OpenAPI overlays, including conversational phrasing for each operation.
 
 - [Afriex Business Overlay](https://apis.io/overlays/afriex/afriex-business-overlay/)
 
+#### Governance rules (1)
+
+Spectral rulesets for the provider's contracts.
+
+- [Afriex API Rules](https://apis.io/rules/afriex/afriex-rules/)
+
 #### Security (2)
 
 Authentication, trust centre, and vulnerability disclosure.
@@ -126,6 +132,12 @@ Published request limits.
 
 - [Afriex Rate Limits](https://apis.io/rate-limits/afriex/afriex-rate-limits/)
 
+#### FinOps (1)
+
+What the API costs to run, by operation.
+
+- [Afriex Finops](https://apis.io/finops/afriex/afriex-finops/)
+
 ## Where to find this API
 
 Links to the company's own pages. This repository publishes no copy of their specifications — the canonical document is theirs and lives at the URLs below.
@@ -143,18 +155,18 @@ Links to the company's own pages. This repository publishes no copy of their spe
 
 ## API Evangelist rating
 
-**Kin Score 48.4** — developing · rubric 0.25.0 · scored 2026-10-23
+**Kin Score 50.9** — developing · rubric 0.28.1 · scored 2026-11-21
 
 | Facet | Score |
 |---|---|
 | Discoverability | 75.0 |
 | Contract quality | 62.6 |
-| Contract governance | 4.5 |
-| Operational transparency | 26.3 |
+| Contract governance | 18.2 |
+| Operational transparency | 26.2 |
 | Developer ergonomics | 73.8 |
-| Access clarity | 34.2 |
+| Access clarity | 42.6 |
 
-**Agent readiness 47.8** — agent-native
+**Agent readiness 48.3** — agent-native
 
 | Agent-readiness dimension | Result |
 |---|---|
@@ -179,8 +191,12 @@ Links to the company's own pages. This repository publishes no copy of their spe
 | Agentic Commerce | — |
 | Pagination Ratio | partial |
 | Operation Distinctiveness | distinct |
+| MCP Tool Quality | three_quarters (partial credit) |
+| Onboarding Descriptor | — |
+| Dns Aid Index | na |
+| Markdown Negotiation | yes |
 
-**Regulatory alignment 22.3** — Payments
+**Regulatory alignment 17.0** — Payments
 
 The rubric is published at [github.com/api-evangelist/kin-score](https://github.com/api-evangelist/kin-score). The per-check breakdown behind these numbers — which checks were earned, partial or missed — along with score history and how this provider compares to its peers, is available at [apis.io/providers/afriex/](https://apis.io/providers/afriex/).
 
